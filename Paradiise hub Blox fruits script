@@ -1,8 +1,14 @@
 --[[
-    BLOX FRUITS ULTIMATE ESP
-    Using Obsidian GUI (https://github.com/deividcomsono/Obsidian)
-    With Toggle, Color Pickers, Distance Slider, and Line ESP.
-    Made for the rebel in you.
+    ============================================================
+    PARADISE HUB – BLOX FRUITS ESP
+    Community Edition v2.0
+    ============================================================
+    - Fully rebranded for your community.
+    - Open-source ready – fork, modify, share.
+    - Built with Obsidian Library (https://github.com/deividcomsono/Obsidian)
+    - Toggleable ESP with color pickers, distance filter, and line ESP.
+    - Optimized for performance and readability.
+    ============================================================
 ]]
 
 -- // LOAD OBSIDIAN LIBRARY
@@ -11,45 +17,50 @@ local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
--- // ENSURE LIBRARY LOADED
+-- // SANITY CHECK
 if not Library then
-    warn("Obsidian Library failed to load. Check your internet.")
+    warn("[Paradise Hub] Failed to load Obsidian Library. Check internet connection.")
     return
 end
 
--- // CREATE WINDOW
+-- // CREATE MAIN WINDOW – PARADISE HUB THEME
 local Window = Library:CreateWindow({
-    Title = "Blox Fruits ESP",
-    Footer = "Rebel Edition",
-    Icon = 95816097006870,
+    Title = "Paradise Hub",              -- Rebranded
+    Footer = "Community Edition v2.0",    -- Your community name
+    Icon = 95816097006870,               -- Change to your own asset ID (optional)
     NotifySide = "Right",
     ShowCustomCursor = true,
+    -- Tropical color scheme (we'll set via theme later)
 })
 
--- // TABS
+-- // CREATE TABS
 local Tabs = {
-    Main = Window:AddTab("ESP", "eye"),
-    UI = Window:AddTab("UI Settings", "settings"),
+    ESP = Window:AddTab("ESP", "eye"),         -- Main ESP controls
+    Combat = Window:AddTab("Combat", "sword"), -- Future combat features
+    Utility = Window:AddTab("Utility", "tool"),-- Future utilities
+    Settings = Window:AddTab("Settings", "settings"), -- UI & config
 }
 
--- // MAIN GROUPBOX
-local ESPGroup = Tabs.Main:AddLeftGroupbox("ESP Controls", "target")
+-- // ============================================================
+-- // ESP TAB – THE CORE
+-- // ============================================================
+local ESPGroup = Tabs.ESP:AddLeftGroupbox("ESP Controls", "target")
 
--- // ESP TOGGLE (THIS IS YOUR REQUESTED TOGGLE)
+-- // 1. ESP TOGGLE (YOUR MAIN REQUEST)
 local espToggle = ESPGroup:AddToggle("ESP_Toggle", {
-    Text = "ESP Enabled",
-    Tooltip = "Toggle the entire ESP system on/off",
-    Default = false,  -- Start off
+    Text = "Enable ESP",
+    Tooltip = "Turn the ESP system on/off",
+    Default = false,
     Risky = false,
     Callback = function(Value)
-        print("[ESP] Toggled to:", Value)
+        print("[Paradise Hub] ESP toggled:", Value)
         if not Value then
-            ClearESP()  -- Clean up all ESP visuals when toggled off
+            ClearESP()
         end
     end
 })
 
--- // DISTANCE SLIDER
+-- // 2. DISTANCE SLIDER
 local distSlider = ESPGroup:AddSlider("DistanceSlider", {
     Text = "Max Distance (studs)",
     Default = 250,
@@ -57,61 +68,114 @@ local distSlider = ESPGroup:AddSlider("DistanceSlider", {
     Max = 500,
     Rounding = 0,
     Suffix = " studs",
-    Tooltip = "Entities beyond this distance will not show ESP",
+    Tooltip = "Entities beyond this distance are ignored",
     Callback = function(Value)
-        print("[ESP] Distance set to:", Value)
+        print("[Paradise Hub] Distance set to:", Value)
     end
 })
 
--- // LINE ESP TOGGLE (extra feature)
+-- // 3. LINE ESP TOGGLE (Extra flair)
 local lineToggle = ESPGroup:AddToggle("LineESP_Toggle", {
     Text = "Draw Lines to Entities",
-    Tooltip = "Draws a line from your character to the target",
+    Tooltip = "Show a line from your character to the target",
     Default = false,
     Callback = function(Value) end
 })
 
--- // COLOR PICKERS FOR EACH ENTITY TYPE
+-- // 4. GLOW EFFECT (Extra feature)
+local glowToggle = ESPGroup:AddToggle("Glow_Toggle", {
+    Text = "Glow Effect",
+    Tooltip = "Adds a glowing aura around entities",
+    Default = true,
+    Callback = function(Value) end
+})
+
+-- // 5. COLOR PICKERS – Paradise Theme (Teal, Gold, Coral)
 local playerColor = ESPGroup:AddLabel("Player Color"):AddColorPicker("PlayerColor", {
-    Default = Color3.new(0, 0.8, 1),  -- Cyan
+    Default = Color3.new(0, 0.8, 0.9),    -- Teal
     Title = "Player ESP Color",
     Callback = function(Value) end
 })
 
 local npcColor = ESPGroup:AddLabel("NPC Color"):AddColorPicker("NPCColor", {
-    Default = Color3.new(1, 0.5, 0),  -- Orange
+    Default = Color3.new(1, 0.7, 0.1),    -- Gold
     Title = "NPC ESP Color",
     Callback = function(Value) end
 })
 
 local chestColor = ESPGroup:AddLabel("Chest Color"):AddColorPicker("ChestColor", {
-    Default = Color3.new(1, 1, 0),  -- Yellow
+    Default = Color3.new(1, 0.4, 0.5),    -- Coral
     Title = "Chest ESP Color",
     Callback = function(Value) end
 })
 
 local fruitColor = ESPGroup:AddLabel("Fruit Color"):AddColorPicker("FruitColor", {
-    Default = Color3.new(1, 0, 0.8),  -- Magenta
+    Default = Color3.new(0.8, 0.2, 0.8),  -- Purple
     Title = "Fruit ESP Color",
     Callback = function(Value) end
 })
 
--- // UI SETTINGS (optional, but we include them for completeness)
-local UIGroup = Tabs.UI:AddLeftGroupbox("Menu Settings", "wrench")
-UIGroup:AddToggle("KeybindMenuOpen", {
-    Default = Library.KeybindFrame.Visible,
-    Text = "Open Keybind Menu",
-    Callback = function(value) Library.KeybindFrame.Visible = value end,
+-- // ============================================================
+-- // COMBAT TAB – PLACEHOLDER FOR FUTURE FEATURES
+-- // ============================================================
+local CombatGroup = Tabs.Combat:AddLeftGroupbox("Combat Features", "sword")
+CombatGroup:AddLabel("Coming soon: Auto-Farm, Aimbot, etc.")
+CombatGroup:AddButton({
+    Text = "Placeholder Button",
+    Func = function()
+        Library:Notify({
+            Title = "Paradise Hub",
+            Description = "Combat features in development!",
+            Time = 3,
+        })
+    end,
 })
-UIGroup:AddToggle("ShowCustomCursor", {
-    Text = "Custom Cursor",
-    Default = Library.ShowCustomCursor,
-    Callback = function(Value) Library.ShowCustomCursor = Value end,
-})
--- Add the rest of UI settings from example.lua if you want, but we keep it lean.
 
 -- // ============================================================
--- // ESP ENGINE - THE REBEL HEART
+-- // UTILITY TAB – PLACEHOLDER
+-- // ============================================================
+local UtilityGroup = Tabs.Utility:AddLeftGroupbox("Utility Features", "tool")
+UtilityGroup:AddLabel("Coming soon: Teleports, Auto-Collect, etc.")
+
+-- // ============================================================
+-- // SETTINGS TAB – UI CONFIGURATION
+-- // ============================================================
+local SettingsGroup = Tabs.Settings:AddLeftGroupbox("UI Settings", "wrench")
+SettingsGroup:AddToggle("KeybindMenuOpen", {
+    Default = Library.KeybindFrame.Visible,
+    Text = "Open Keybind Menu",
+    Callback = function(value)
+        Library.KeybindFrame.Visible = value
+    end,
+})
+SettingsGroup:AddToggle("ShowCustomCursor", {
+    Text = "Custom Cursor",
+    Default = Library.ShowCustomCursor,
+    Callback = function(Value)
+        Library.ShowCustomCursor = Value
+    end,
+})
+SettingsGroup:AddDropdown("NotificationSide", {
+    Values = { "Left", "Right" },
+    Default = "Right",
+    Text = "Notification Side",
+    Callback = function(Value)
+        Library:SetNotifySide(Value)
+    end,
+})
+SettingsGroup:AddSlider("UICornerSlider", {
+    Text = "Corner Radius",
+    Default = Library.CornerRadius,
+    Min = 0,
+    Max = 20,
+    Rounding = 0,
+    Callback = function(value)
+        Window:SetCornerRadius(value)
+    end
+})
+
+-- // ============================================================
+-- // ESP ENGINE – THE HEART OF PARADISE HUB
 -- // ============================================================
 
 local RunService = game:GetService("RunService")
@@ -125,9 +189,10 @@ local ESPObjects = {
     Highlights = {},
     Billboards = {},
     Lines = {},
+    Glows = {},
 }
 
--- // HELPER: CREATE A BILLBOARD GUI WITH TEXT
+-- // HELPER: CREATE BILLBOARD
 local function CreateBillboard(adornee, text, color, offset)
     local bill = Instance.new("BillboardGui")
     bill.Adornee = adornee
@@ -147,11 +212,10 @@ local function CreateBillboard(adornee, text, color, offset)
     label.TextSize = 14
     label.TextScaled = false
     label.TextWrapped = true
-
     return bill
 end
 
--- // HELPER: CREATE A HIGHLIGHT (BOX)
+-- // HELPER: CREATE HIGHLIGHT (BOX)
 local function CreateHighlight(adornee, color)
     local hl = Instance.new("Highlight")
     hl.Adornee = adornee
@@ -163,28 +227,42 @@ local function CreateHighlight(adornee, color)
     return hl
 end
 
--- // HELPER: CREATE A LINE FROM LOCAL PLAYER TO TARGET
+-- // HELPER: CREATE GLOW EFFECT (using a transparent cylinder)
+local function CreateGlow(adornee, color)
+    -- We'll use a part with a special material for glow
+    local glowPart = Instance.new("Part")
+    glowPart.Anchored = true
+    glowPart.CanCollide = false
+    glowPart.Material = Enum.Material.Neon
+    glowPart.BrickColor = BrickColor.new(color)
+    glowPart.Size = Vector3.new(5, 8, 5) -- Adjust size
+    glowPart.Transparency = 0.7
+    glowPart.Shape = Enum.PartType.Cylinder
+    glowPart.Parent = adornee
+    -- We'll position it later in the update loop
+    return glowPart
+end
+
+-- // HELPER: CREATE LINE (using a part)
 local function CreateLine(targetPos, color)
-    -- We'll use a simple part-based line or a drawing object.
-    -- For performance, we use a Bezier curve? No, we'll use a simple cylinder.
-    -- Actually, Drawing objects (if supported) are lighter. We'll use a Part for compatibility.
-    local startPos = LocalPlayer.Character and LocalPlayer.Character.PrimaryPart and LocalPlayer.Character.PrimaryPart.Position or Vector3.new(0,0,0)
+    local startPos = LocalPlayer.Character and LocalPlayer.Character.PrimaryPart and LocalPlayer.Character.PrimaryPart.Position or Vector3.new(0, 0, 0)
     local midPos = (startPos + targetPos) / 2
     local distance = (startPos - targetPos).Magnitude
+    if distance < 1 then return nil end
 
     local part = Instance.new("Part")
     part.Anchored = true
     part.CanCollide = false
-    part.Material = Enum.Material.SmoothPlastic
+    part.Material = Enum.Material.Neon
     part.BrickColor = BrickColor.new(color)
-    part.Size = Vector3.new(0.3, 0.3, distance)
-    part.CFrame = CFrame.lookAt(midPos, targetPos) * CFrame.new(0, 0, -distance/2)
+    part.Size = Vector3.new(0.2, 0.2, distance)
+    part.CFrame = CFrame.lookAt(midPos, targetPos) * CFrame.new(0, 0, -distance / 2)
     part.BottomSurface = Enum.SurfaceType.Smooth
     part.TopSurface = Enum.SurfaceType.Smooth
     return part
 end
 
--- // CLEAR ALL ESP
+-- // CLEAR ALL ESP OBJECTS
 function ClearESP()
     for _, v in pairs(ESPObjects.Highlights) do
         if v and v.Parent then v:Destroy() end
@@ -195,12 +273,16 @@ function ClearESP()
     for _, v in pairs(ESPObjects.Lines) do
         if v and v.Parent then v:Destroy() end
     end
+    for _, v in pairs(ESPObjects.Glows) do
+        if v and v.Parent then v:Destroy() end
+    end
     ESPObjects.Highlights = {}
     ESPObjects.Billboards = {}
     ESPObjects.Lines = {}
+    ESPObjects.Glows = {}
 end
 
--- // MAIN ESP UPDATE FUNCTION
+-- // MAIN ESP UPDATE LOOP
 local function UpdateESP()
     -- Check if ESP is enabled
     if not Toggles.ESP_Toggle.Value then
@@ -211,12 +293,13 @@ local function UpdateESP()
     -- Get settings
     local maxDist = Options.DistanceSlider.Value or 250
     local showLines = Toggles.LineESP_Toggle.Value or false
-    local plyColor = Options.PlayerColor.Value or Color3.new(0, 0.8, 1)
-    local npcColor = Options.NPCColor.Value or Color3.new(1, 0.5, 0)
-    local chestColor = Options.ChestColor.Value or Color3.new(1, 1, 0)
-    local fruitColor = Options.FruitColor.Value or Color3.new(1, 0, 0.8)
+    local showGlow = Toggles.Glow_Toggle.Value or true
+    local plyColor = Options.PlayerColor.Value or Color3.new(0, 0.8, 0.9)
+    local npcColor = Options.NPCColor.Value or Color3.new(1, 0.7, 0.1)
+    local chestColor = Options.ChestColor.Value or Color3.new(1, 0.4, 0.5)
+    local fruitColor = Options.FruitColor.Value or Color3.new(0.8, 0.2, 0.8)
 
-    -- Clear old ESP to refresh
+    -- Clear old ESP for refresh
     ClearESP()
 
     -- // 1. PLAYERS
@@ -238,49 +321,59 @@ local function UpdateESP()
                     bill.Parent = char
                     table.insert(ESPObjects.Billboards, bill)
 
+                    -- Glow
+                    if showGlow then
+                        local glow = CreateGlow(root, plyColor)
+                        glow.Parent = char
+                        table.insert(ESPObjects.Glows, glow)
+                    end
+
                     -- Line
                     if showLines then
                         local line = CreateLine(root.Position, plyColor)
-                        line.Parent = char
-                        table.insert(ESPObjects.Lines, line)
+                        if line then
+                            line.Parent = char
+                            table.insert(ESPObjects.Lines, line)
+                        end
                     end
                 end
             end
         end
     end
 
-    -- // 2. NPCs (Enemies, Quest givers, Shopkeepers)
-    -- Blox Fruits NPCs are often in workspace with a Humanoid and a name like "NPC_", "Boss_", "QuestGiver_"
+    -- // 2. NPCS (Enemies, Quest Givers, Shopkeepers)
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
-            -- Skip if it's a player (we already handled)
             if not Players:GetPlayerFromCharacter(obj) then
                 local root = obj.HumanoidRootPart
                 local dist = (LocalPlayer.Character and LocalPlayer.Character.PrimaryPart and LocalPlayer.Character.PrimaryPart.Position - root.Position).Magnitude or 999
                 if dist <= maxDist then
                     local npcName = obj.Name or "NPC"
-                    -- Highlight
                     local hl = CreateHighlight(obj, npcColor)
                     hl.Parent = obj
                     table.insert(ESPObjects.Highlights, hl)
-                    -- Billboard
                     local text = npcName .. " | " .. math.floor(dist) .. "m"
                     local bill = CreateBillboard(root, text, npcColor, Vector3.new(0, 4, 0))
                     bill.Parent = obj
                     table.insert(ESPObjects.Billboards, bill)
-                    -- Line
+                    if showGlow then
+                        local glow = CreateGlow(root, npcColor)
+                        glow.Parent = obj
+                        table.insert(ESPObjects.Glows, glow)
+                    end
                     if showLines then
                         local line = CreateLine(root.Position, npcColor)
-                        line.Parent = obj
-                        table.insert(ESPObjects.Lines, line)
+                        if line then
+                            line.Parent = obj
+                            table.insert(ESPObjects.Lines, line)
+                        end
                     end
                 end
             end
         end
     end
 
-    -- // 3. CHESTS (Fruit Chests, Supply Chests, Money Chests)
-    -- They are usually parts or models with "Chest" in name
+    -- // 3. CHESTS (Fruit, Supply, Money)
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("Part") then
             local name = obj.Name:lower()
@@ -292,14 +385,21 @@ local function UpdateESP()
                         local hl = CreateHighlight(obj, chestColor)
                         hl.Parent = obj
                         table.insert(ESPObjects.Highlights, hl)
-                        local text = "Chest | " .. math.floor(dist) .. "m"
+                        local text = "📦 Chest | " .. math.floor(dist) .. "m"
                         local bill = CreateBillboard(root, text, chestColor, Vector3.new(0, 2, 0))
                         bill.Parent = obj
                         table.insert(ESPObjects.Billboards, bill)
+                        if showGlow then
+                            local glow = CreateGlow(root, chestColor)
+                            glow.Parent = obj
+                            table.insert(ESPObjects.Glows, glow)
+                        end
                         if showLines then
                             local line = CreateLine(root.Position, chestColor)
-                            line.Parent = obj
-                            table.insert(ESPObjects.Lines, line)
+                            if line then
+                                line.Parent = obj
+                                table.insert(ESPObjects.Lines, line)
+                            end
                         end
                     end
                 end
@@ -308,7 +408,6 @@ local function UpdateESP()
     end
 
     -- // 4. DEVIL FRUITS ON GROUND
-    -- Usually parts with "Fruit" or "DevilFruit" in name
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Part") or obj:IsA("Model") then
             local name = obj.Name:lower()
@@ -324,10 +423,17 @@ local function UpdateESP()
                         local bill = CreateBillboard(root, text, fruitColor, Vector3.new(0, 2, 0))
                         bill.Parent = obj
                         table.insert(ESPObjects.Billboards, bill)
+                        if showGlow then
+                            local glow = CreateGlow(root, fruitColor)
+                            glow.Parent = obj
+                            table.insert(ESPObjects.Glows, glow)
+                        end
                         if showLines then
                             local line = CreateLine(root.Position, fruitColor)
-                            line.Parent = obj
-                            table.insert(ESPObjects.Lines, line)
+                            if line then
+                                line.Parent = obj
+                                table.insert(ESPObjects.Lines, line)
+                            end
                         end
                     end
                 end
@@ -336,36 +442,41 @@ local function UpdateESP()
     end
 end
 
--- // RUN THE ESP LOOP
+-- // START THE ESP LOOP
 RunService.Heartbeat:Connect(UpdateESP)
 
--- // ALSO CLEAR ON CHARACTER RESPAWN / TELEPORT
+-- // CLEANUP ON CHARACTER CHANGE
 LocalPlayer.CharacterAdded:Connect(function()
     ClearESP()
 end)
 
--- // CLEANUP WHEN UNLOADED
+-- // UNLOAD CLEANUP
 Library:OnUnload(function()
     ClearESP()
-    print("[ESP] Unloaded. Cleaned up.")
+    print("[Paradise Hub] Unloaded. See you in paradise!")
 end)
 
--- // SAVE/LOAD CONFIGS (optional but nice)
+-- // ============================================================
+-- // CONFIGURATION SYSTEM (Saves settings across sessions)
+-- // ============================================================
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
 SaveManager:IgnoreThemeSettings()
 SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
-ThemeManager:SetFolder("BloxFruitsESP")
-SaveManager:SetFolder("BloxFruitsESP")
-SaveManager:BuildConfigSection(Tabs.UI)
-ThemeManager:ApplyToTab(Tabs.UI)
+ThemeManager:SetFolder("ParadiseHub")
+SaveManager:SetFolder("ParadiseHub")
+SaveManager:SetSubFolder("BloxFruits")
+SaveManager:BuildConfigSection(Tabs.Settings)
+ThemeManager:ApplyToTab(Tabs.Settings)
 SaveManager:LoadAutoloadConfig()
 
--- // NOTIFY USER
+-- // ============================================================
+-- // WELCOME NOTIFICATION
+-- // ============================================================
 Library:Notify({
-    Title = "ESP Loaded",
-    Description = "Toggle ESP from the GUI. Enjoy, fren!",
+    Title = "🌴 Paradise Hub Loaded",
+    Description = "Welcome to Paradise! Toggle ESP from the ESP tab.",
     Time = 5,
 })
 
-print("[ESP] Script loaded successfully. Use the GUI to toggle.")
+print("[Paradise Hub] Successfully initialized. Community Edition v2.0")
