@@ -1,18 +1,17 @@
 --[[
     ============================================================
-    PARADISE HUB – BLOX FRUITS (No Blink Edition)
-    Community Edition
+    PARADISE HUB – Blox Fruits (Key GUI + Full Hub)
     ============================================================
-    - Stable key overlay (custom GUI) – no focus loss.
-    - After unlock, loads Obsidian-based GUI.
-    - Tab Order: AutoFarm → ESP → Utility → Settings.
-    - ESP with Toggle.
-    - Game Settings: Rejoin, Unload, Join Small Servers.
+    - Separate key overlay (own GUI) – no blink.
+    - After correct key, loads the complete Obsidian hub.
+    - Tabs: AutoFarm → ESP → Utility → Settings.
+    - ESP toggle, Game Settings (Rejoin, Unload, Join Small Servers).
+    - Key: OHPARADISENOTAGAIN!
     ============================================================
 ]]
 
 -- // ============================================================
--- // PART 1: KEY OVERLAY (Custom, Blink‑Free)
+-- // PART 1: KEY GUI (Standalone, Blink‑Free)
 -- // ============================================================
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -63,7 +62,7 @@ keySub.TextColor3 = Color3.fromRGB(200, 150, 255)
 keySub.TextSize = 14
 keySub.Font = Enum.Font.Gotham
 
--- Input Box (the star – no blink)
+-- Input Box (no blink)
 local keyBox = Instance.new("TextBox", keyFrame)
 keyBox.Size = UDim2.new(0.8, 0, 0, 40)
 keyBox.Position = UDim2.new(0.1, 0, 0, 100)
@@ -104,14 +103,14 @@ errorLabel.Font = Enum.Font.Gotham
 local function UnlockGUI()
     if keyBox.Text == CORRECT_KEY then
         isUnlocked = true
-        keyGui:Destroy() -- Remove the overlay
+        keyGui:Destroy() -- Remove the key GUI
         StarterGui:SetCore("SendNotification", {
             Title = "🔓 Paradise Unlocked",
             Text = "Welcome, fren!",
             Duration = 4,
         })
         print("[Paradise Hub] Unlocked.")
-        -- Now load the Obsidian-based GUI
+        -- Now load the full Obsidian hub
         LoadObsidianGUI()
     else
         errorLabel.Text = "❌ Incorrect key. Try again."
@@ -131,7 +130,7 @@ keyBox.FocusLost:Connect(function(enterPressed)
 end)
 
 -- // ============================================================
--- // PART 2: OBSIDIAN GUI (Loaded Only After Unlock)
+-- // PART 2: FULL PARADISE HUB (Obsidian GUI)
 -- // ============================================================
 function LoadObsidianGUI()
     -- Load Obsidian Library
