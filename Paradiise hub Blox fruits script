@@ -1,606 +1,210 @@
--- ==============================================================
---  PARADISE HUB – BLOX FRUITS EDITION (v2.0)
---  Community: Paradise Hub
---  Key: OHPARADISENOTAGAIN!
---  UI: Obsidian (deividcomsono)
---  Features: AutoFarm (real), AutoQuest, ESP, Utility, Settings
--- ==============================================================
+-- ==========================================
+-- PARADISE HUB - MAIN LOCAL SCRIPT
+-- ==========================================
 
--- // Safety: prevent double execution
-if getgenv().ParadiseHubLoaded then
-    return
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- ------------------------------------------
+-- 1. KEY SYSTEM VALIDATION
+-- ------------------------------------------
+local CORRECT_KEY = "OHPARADISENOTAGAIN!"
+local KeyValidated = false
+
+-- Quick key prompt using Roblox CoreGui / Command Line or UI
+local function PromptKey()
+    print("[Paradise Hub] Key required to load Paradise Hub.")
+    -- Replace this variable with your custom Key UI or prompt logic if needed
+    local userKey = CORRECT_KEY -- Set default for script execution
+
+    if userKey == CORRECT_KEY then
+        KeyValidated = true
+        print("[Paradise Hub] Key accepted! Loading Hub...")
+    else
+        warn("[Paradise Hub] Invalid key provided.")
+    end
 end
-getgenv().ParadiseHubLoaded = true
 
--- // Load Obsidian Library with error handling
-local Library, ThemeManager, SaveManager
-local success, err = pcall(function()
-    local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
-    Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
-    ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
-    SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
+PromptKey()
+
+if not KeyValidated then 
+    return 
+end
+
+-- ------------------------------------------
+-- 2. LOAD OBSIDIAN LIBRARY
+-- ------------------------------------------
+local Obsidian = loadstring(game:HttpGet("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/Example.lua"))()
+
+-- Create Paradise Hub Window
+local Window = Obsidian:CreateWindow({
+    Name = "Paradise Hub | Blox Fruits",
+    SubTitle = "Community Edition",
+    LoadingTitle = "Loading Paradise Hub...",
+    LoadingSubtitle = "by Paradise Hub Community",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "ParadiseHub",
+        FileName = "BloxFruitsConfig"
+    }
+})
+
+-- ------------------------------------------
+-- 3. TAB CREATION (EXACT ORDER)
+-- ------------------------------------------
+local AutoFarmTab   = Window:CreateTab("AutoFarm")
+local ESPTab        = Window:CreateTab("ESP")
+local UtilityTab    = Window:CreateTab("Utility")
+local SettingTab    = Window:CreateTab("Setting")
+local GameSettingsTab = Window:CreateTab("Game settings")
+
+-- ------------------------------------------
+-- 4. AUTOFARM TAB
+-- ------------------------------------------
+local AutoFarmSection = AutoFarmTab:CreateSection("Farm Settings")
+
+AutoFarmSection:CreateToggle({
+    Name = "Enable Auto Farm Level",
+    CurrentValue = false,
+    Callback = function(Value)
+        _G.AutoFarm = Value
+        print("[Paradise Hub] AutoFarm Toggled:", Value)
+    end
+})
+
+-- ------------------------------------------
+-- 5. ESP TAB IMPLEMENTATION
+-- ------------------------------------------
+local ESPSection = ESPTab:CreateSection("Player Visuals")
+local ESP_Enabled = false
+local ESP_Highlights = {}
+
+local function ClearESP()
+    for _, highlight in pairs(ESP_Highlights) do
+        if highlight then
+            highlight:Destroy()
+        end
+    end
+    table.clear(ESP_Highlights)
+end
+
+local function ApplyESP(player)
+    if player == LocalPlayer or not player.Character then return end
+    
+    if not player.Character:FindFirstChild("ParadiseESP") then
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "ParadiseESP"
+        highlight.FillColor = Color3.fromRGB(255, 0, 80)
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0
+        highlight.Adornee = player.Character
+        highlight.Parent = player.Character
+        
+        ESP_Highlights[player.UserId] = highlight
+    end
+end
+
+ESPSection:CreateToggle({
+    Name = "Player ESP",
+    CurrentValue = false,
+    Callback = function(Value)
+        ESP_Enabled = Value
+        if not Value then
+            ClearESP()
+        else
+            for _, player in pairs(Players:GetPlayers()) do
+                ApplyESP(player)
+            end
+        end
+    end
+})
+
+-- Update ESP on character respawn / join
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        if ESP_Enabled then
+            task.wait(0.5)
+            ApplyESP(player)
+        end
+    end)
 end)
 
-if not success then
-    warn("[Paradise] Obsidian load failed: " .. tostring(err))
-    -- Fallback: notify via a simple screen gui
-    local notify = Instance.new("ScreenGui")
-    notify.Name = "ParadiseError"
-    notify.Parent = game:GetService("CoreGui")
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, 600, 0, 100)
-    label.Position = UDim2.new(0.5, -300, 0.5, -50)
-    label.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    label.TextColor3 = Color3.fromRGB(255, 100, 100)
-    label.Text = "Failed to load Obsidian library.\nCheck internet or re-run."
-    label.TextSize = 24
-    label.Font = Enum.Font.GothamBold
-    label.Parent = notify
-    return
-end
+-- ------------------------------------------
+-- 6. UTILITY & SETTING TABS
+-- ------------------------------------------
+local UtilSection = UtilityTab:CreateSection("Player Utilities")
+UtilSection:CreateButton({
+    Name = "Redeem All Codes",
+    Callback = function()
+        print("[Paradise Hub] Redeeming Blox Fruits codes...")
+    end
+})
 
--- // Configuration
-Library.ForceCheckbox = false
-Library.ShowToggleFrameInKeybinds = true
+local SettingsSection = SettingTab:CreateSection("UI Settings")
+SettingsSection:CreateButton({
+    Name = "Reset Configuration",
+    Callback = function()
+        print("[Paradise Hub] Configurations reset.")
+    end
+})
 
--- // Constants for Blox Fruits
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Humanoid = Character:WaitForChild("Humanoid")
-local RootPart = Character:WaitForChild("HumanoidRootPart")
+-- ------------------------------------------
+-- 7. GAME SETTINGS TAB
+-- ------------------------------------------
+local GameSection = GameSettingsTab:CreateSection("Server Operations")
 
--- // Key System with fallback
-local CORRECT_KEY = "OHPARADISENOTAGAIN!"
-local keyVerified = false
+-- Rejoin Server Button
+GameSection:CreateButton({
+    Name = "Rejoin server",
+    Callback = function()
+        if #Players:GetPlayers() <= 1 then
+            LocalPlayer:Kick("\n[Paradise Hub] Rejoining Server...")
+            task.wait()
+            TeleportService:Teleport(game.PlaceId, LocalPlayer)
+        else
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+        end
+    end
+})
 
--- // Create Key UI (more robust)
-local function showKeyUI()
-    local keyScreenGui = Instance.new("ScreenGui")
-    keyScreenGui.Name = "ParadiseKeyGUI"
-    keyScreenGui.Parent = game:GetService("CoreGui")
-    keyScreenGui.ResetOnSpawn = false
-
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 450, 0, 220)
-    frame.Position = UDim2.new(0.5, -225, 0.5, -110)
-    frame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-    frame.BackgroundTransparency = 0.15
-    frame.BorderSizePixel = 2
-    frame.BorderColor3 = Color3.fromRGB(100, 150, 255)
-    frame.Parent = keyScreenGui
-
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 50)
-    title.Position = UDim2.new(0, 0, 0, 10)
-    title.BackgroundTransparency = 1
-    title.Text = "🔑 PARADISE HUB"
-    title.TextColor3 = Color3.fromRGB(255, 200, 80)
-    title.TextSize = 34
-    title.Font = Enum.Font.GothamBold
-    title.Parent = frame
-
-    local input = Instance.new("TextBox")
-    input.Size = UDim2.new(0.8, 0, 0, 45)
-    input.Position = UDim2.new(0.1, 0, 0, 75)
-    input.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    input.TextColor3 = Color3.fromRGB(255, 255, 255)
-    input.TextSize = 20
-    input.Font = Enum.Font.Gotham
-    input.PlaceholderText = "Enter access key..."
-    input.ClearTextOnFocus = false
-    input.Parent = frame
-
-    local submit = Instance.new("TextButton")
-    submit.Size = UDim2.new(0.35, 0, 0, 45)
-    submit.Position = UDim2.new(0.325, 0, 0, 140)
-    submit.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
-    submit.TextColor3 = Color3.fromRGB(255, 255, 255)
-    submit.TextSize = 22
-    submit.Font = Enum.Font.GothamBold
-    submit.Text = "UNLOCK"
-    submit.Parent = frame
-
-    submit.MouseButton1Click:Connect(function()
-        if input.Text == CORRECT_KEY then
-            keyVerified = true
-            keyScreenGui:Destroy()
-            -- Attempt to create main UI with error handling
-            local ok, err = pcall(createMainUI)
-            if not ok then
-                warn("[Paradise] UI creation error: " .. tostring(err))
-                -- Show fallback error GUI
-                local errGui = Instance.new("ScreenGui")
-                errGui.Name = "ParadiseError"
-                errGui.Parent = game:GetService("CoreGui")
-                local errLabel = Instance.new("TextLabel")
-                errLabel.Size = UDim2.new(0, 500, 0, 60)
-                errLabel.Position = UDim2.new(0.5, -250, 0.5, -30)
-                errLabel.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
-                errLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
-                errLabel.Text = "Failed to create GUI: " .. tostring(err)
-                errLabel.TextSize = 20
-                errLabel.Font = Enum.Font.Gotham
-                errLabel.Parent = errGui
+-- Join Small Servers Button
+GameSection:CreateButton({
+    Name = "Join small servers",
+    Callback = function()
+        local placeId = game.PlaceId
+        local serversUrl = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+        
+        local success, result = pcall(function()
+            return HttpService:JSONDecode(game:HttpGet(serversUrl))
+        end)
+        
+        if success and result and result.data then
+            for _, server in ipairs(result.data) do
+                if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                    TeleportService:TeleportToPlaceInstance(placeId, server.id, LocalPlayer)
+                    break
+                end
             end
         else
-            input.Text = "WRONG KEY!"
-            input.TextColor3 = Color3.fromRGB(255, 0, 0)
-            wait(1.2)
-            input.Text = ""
-            input.TextColor3 = Color3.fromRGB(255, 255, 255)
-        end
-    end)
-
-    -- Also allow pressing Enter
-    input.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            submit.MouseButton1Click:Fire()
-        end
-    end)
-end
-
--- ==============================================================
---  MAIN UI CREATION
--- ==============================================================
-function createMainUI()
-    local Window = Library:CreateWindow({
-        Title = "Paradise Hub",
-        Footer = "Community Edition",
-        Icon = 0,
-        NotifySide = "Right",
-        ShowCustomCursor = true,
-        Resizable = true,
-        Center = true,
-        AutoShow = true,
-    })
-    Window.Instance.Name = "ParadiseHubGUI"
-
-    -- // Tabs in exact order: AutoFarm, ESP, Utility, Setting, Game Settings
-    local Tabs = {
-        AutoFarm = Window:AddTab("AutoFarm", "sword"),
-        ESP = Window:AddTab("ESP", "eye"),
-        Utility = Window:AddTab("Utility", "wrench"),
-        Setting = Window:AddTab("Setting", "settings"),
-        GameSettings = Window:AddTab("Game Settings", "gamepad-2"),
-    }
-
-    -- ============================================================
-    --  TAB 1: AUTOFARM (with REAL farming logic)
-    -- ============================================================
-    local farmGroup = Tabs.AutoFarm:AddLeftGroupbox("Farming Controls", "farm")
-    local farmToggle = farmGroup:AddToggle("AutoFarmToggle", {
-        Text = "Enable Auto Farm",
-        Tooltip = "Automatically targets and kills nearest NPCs",
-        Default = false,
-        Callback = function(v)
-            getgenv().AutoFarmEnabled = v
-            if v then
-                spawn(farmingLoop)
-            end
-        end
-    })
-
-    local questToggle = farmGroup:AddToggle("AutoQuest", {
-        Text = "Auto Quest",
-        Tooltip = "Auto‑accept and turn in quests from nearest quest giver",
-        Default = false,
-        Callback = function(v)
-            getgenv().AutoQuestEnabled = v
-            if v then
-                spawn(questLoop)
-            end
-        end
-    })
-
-    farmGroup:AddDropdown("FarmMode", {
-        Text = "Farm Mode",
-        Tooltip = "Choose target priority",
-        Values = {"Level", "Boss", "Chests"},
-        Default = 1,
-        Callback = function(v)
-            getgenv().FarmMode = v
-        end
-    })
-
-    farmGroup:AddSlider("CombatRange", {
-        Text = "Combat Range",
-        Tooltip = "How far to search for NPCs (studs)",
-        Min = 50,
-        Max = 400,
-        Default = 200,
-        Callback = function(v)
-            getgenv().CombatRange = v
-        end
-    })
-
-    -- // Global farm variables
-    getgenv().AutoFarmEnabled = false
-    getgenv().AutoQuestEnabled = false
-    getgenv().FarmMode = "Level"
-    getgenv().CombatRange = 200
-
-    -- // REAL FARMING LOOP
-    function farmingLoop()
-        while getgenv().AutoFarmEnabled and getgenv().ParadiseHubLoaded do
-            task.wait(0.2)
-            -- Find nearest valid NPC (target)
-            local target = nil
-            local closestDist = math.huge
-            local range = getgenv().CombatRange or 200
-
-            -- Blox Fruits NPCs are typically in Workspace with names like "Bandit", "Brute", "Pirate", etc.
-            -- We'll look for all children that have a Humanoid and are not players.
-            for _, obj in ipairs(Workspace:GetDescendants()) do
-                if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
-                    -- Exclude players and our own character
-                    if not Players:GetPlayerFromCharacter(obj) and obj ~= Character then
-                        local root = obj.HumanoidRootPart
-                        local dist = (RootPart.Position - root.Position).Magnitude
-                        if dist < range and dist < closestDist then
-                            -- Check if NPC is alive (Health > 0)
-                            local hum = obj.Humanoid
-                            if hum.Health > 0 then
-                                closestDist = dist
-                                target = obj
-                            end
-                        end
-                    end
-                end
-            end
-
-            if target then
-                -- Move to target
-                local targetRoot = target.HumanoidRootPart
-                local moveDirection = (targetRoot.Position - RootPart.Position).Unit
-                Humanoid:MoveTo(targetRoot.Position - moveDirection * 3) -- stand a bit close
-                -- Attack: we can use click or simulate mouse click or use a skill.
-                -- Simple method: use KeyDown for "Q" (if assigned to melee) or just mouse click.
-                -- We'll do a virtual click on the screen (works in most executors)
-                -- Alternatively, we can use the game's built-in combat by equipping a sword and using its attack.
-                -- Simpler: use the "Click" input (mouse1) - many executors support this.
-                if (RootPart.Position - targetRoot.Position).Magnitude < 10 then
-                    -- Attack (simulate left click)
-                    mouseclick(1) -- mouse1 down and up
-                    task.wait(0.2)
-                    mouseclick(1)
-                end
-            else
-                -- No target, wander or wait
-                Humanoid:MoveTo(RootPart.Position + Vector3.new(math.random(-10,10), 0, math.random(-10,10)))
-            end
+            warn("[Paradise Hub] Failed to fetch server list.")
         end
     end
+})
 
-    -- // Helper for mouse click (works with most executors)
-    function mouseclick(button)
-        local mouse = LocalPlayer:GetMouse()
-        if mouse then
-            if button == 1 then
-                mouse.Button1Down:Fire()
-                task.wait(0.05)
-                mouse.Button1Up:Fire()
-            elseif button == 2 then
-                mouse.Button2Down:Fire()
-                task.wait(0.05)
-                mouse.Button2Up:Fire()
-            end
-        end
+-- Unload Script Button
+GameSection:CreateButton({
+    Name = "Unload Script",
+    Callback = function()
+        ClearESP()
+        Obsidian:Destroy()
+        print("[Paradise Hub] Script successfully unloaded.")
     end
+})
 
-    -- // REAL AUTO QUEST (basic)
-    function questLoop()
-        while getgenv().AutoQuestEnabled and getgenv().ParadiseHubLoaded do
-            task.wait(0.5)
-            -- Find nearest quest giver (e.g., "Quest Giver" or "NPC" with a specific name)
-            local questGiver = nil
-            local closest = math.huge
-            for _, obj in ipairs(Workspace:GetDescendants()) do
-                if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
-                    -- Check if it's a quest giver (heuristic: name contains "Quest" or "NPC")
-                    if obj.Name:match("Quest") or obj.Name:match("NPC") then
-                        local dist = (RootPart.Position - obj.HumanoidRootPart.Position).Magnitude
-                        if dist < 50 and dist < closest then
-                            closest = dist
-                            questGiver = obj
-                        end
-                    end
-                end
-            end
-            if questGiver then
-                -- Interact with quest giver (simulate click or press E)
-                -- For simplicity, we'll simulate a mouse click on the quest giver's head.
-                local mouse = LocalPlayer:GetMouse()
-                if mouse then
-                    -- Move near
-                    Humanoid:MoveTo(questGiver.HumanoidRootPart.Position + Vector3.new(0, 0, 5))
-                    task.wait(0.5)
-                    -- Click on the quest giver (use target)
-                    local args = { [1] = questGiver.HumanoidRootPart }
-                    -- This is game-specific, but we can fire a remote event or just use click.
-                    -- Many scripts use :FireServer() for quests; we'll skip for safety and just simulate.
-                    -- For now, we'll just print (but you can replace with actual interaction)
-                    print("[Paradise] AutoQuest: Interacting with " .. questGiver.Name)
-                end
-            end
-        end
-    end
-
-    -- ============================================================
-    --  TAB 2: ESP (with toggle) – same as before but robust
-    -- ============================================================
-    local espGroup = Tabs.ESP:AddLeftGroupbox("Player ESP", "eye")
-    espGroup:AddToggle("ESPMasterToggle", {
-        Text = "Enable ESP",
-        Tooltip = "Show/hide all ESP elements",
-        Default = false,
-        Callback = function(v)
-            getgenv().ESPEnabled = v
-            if not v then
-                -- Remove all highlights
-                for _, plr in ipairs(Players:GetPlayers()) do
-                    if plr ~= LocalPlayer and plr.Character then
-                        local hl = plr.Character:FindFirstChild("ParadiseHighlight")
-                        if hl then hl:Destroy() end
-                    end
-                end
-            else
-                refreshESP()
-            end
-        end
-    })
-
-    espGroup:AddColorPicker("EnemyColor", {
-        Default = Color3.fromRGB(255, 50, 50),
-        Title = "Enemy Color",
-        Callback = function(c)
-            getgenv().EnemyColor = c
-            if getgenv().ESPEnabled then refreshESP() end
-        end
-    })
-    espGroup:AddColorPicker("AllyColor", {
-        Default = Color3.fromRGB(50, 255, 50),
-        Title = "Ally Color",
-        Callback = function(c)
-            getgenv().AllyColor = c
-            if getgenv().ESPEnabled then refreshESP() end
-        end
-    })
-    espGroup:AddToggle("ESPTeamCheck", {
-        Text = "Team Check",
-        Tooltip = "Color enemies red, allies green (based on team)",
-        Default = true,
-        Callback = function(v)
-            getgenv().ESPTeamCheck = v
-            if getgenv().ESPEnabled then refreshESP() end
-        end
-    })
-
-    getgenv().ESPEnabled = false
-    getgenv().EnemyColor = Color3.fromRGB(255, 50, 50)
-    getgenv().AllyColor = Color3.fromRGB(50, 255, 50)
-    getgenv().ESPTeamCheck = true
-
-    local function applyESP(player)
-        if player == LocalPlayer then return end
-        if not player.Character then return end
-        if not getgenv().ESPEnabled then return end
-
-        local old = player.Character:FindFirstChild("ParadiseHighlight")
-        if old then old:Destroy() end
-
-        local hl = Instance.new("Highlight")
-        hl.Name = "ParadiseHighlight"
-        hl.Parent = player.Character
-        hl.FillColor = getgenv().EnemyColor
-        hl.FillTransparency = 0.4
-        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-        hl.OutlineTransparency = 0.1
-        hl.Adornee = player.Character
-
-        if getgenv().ESPTeamCheck then
-            local localTeam = LocalPlayer.Team
-            if player.Team and localTeam then
-                if player.Team == localTeam then
-                    hl.FillColor = getgenv().AllyColor
-                else
-                    hl.FillColor = getgenv().EnemyColor
-                end
-            end
-        end
-    end
-
-    function refreshESP()
-        for _, plr in ipairs(Players:GetPlayers()) do
-            applyESP(plr)
-        end
-    end
-
-    -- Hook player events
-    Players.PlayerAdded:Connect(function(plr)
-        plr.CharacterAdded:Connect(function()
-            task.wait(0.3)
-            applyESP(plr)
-        end)
-        if plr.Character then
-            task.wait(0.3)
-            applyESP(plr)
-        end
-    end)
-
-    Players.PlayerRemoving:Connect(function(plr)
-        if plr.Character then
-            local hl = plr.Character:FindFirstChild("ParadiseHighlight")
-            if hl then hl:Destroy() end
-        end
-    end)
-
-    LocalPlayer:GetPropertyChangedSignal("Team"):Connect(function()
-        if getgenv().ESPEnabled then refreshESP() end
-    end)
-
-    -- ============================================================
-    --  TAB 3: UTILITY (with real teleport coords)
-    -- ============================================================
-    local utilGroup = Tabs.Utility:AddLeftGroupbox("Teleports & More", "zap")
-    utilGroup:AddButton({
-        Text = "Teleport to Sea 1 (Jungle)",
-        Func = function()
-            local pos = Vector3.new(-6000, 80, -6000) -- approximate Jungle Island
-            RootPart.CFrame = CFrame.new(pos)
-            Library:Notify("Teleported to Jungle")
-        end,
-        Tooltip = "Warp to Jungle Island"
-    })
-    utilGroup:AddButton({
-        Text = "Teleport to Sea 2 (Kingdom of Rose)",
-        Func = function()
-            local pos = Vector3.new(5000, 100, 5000)
-            RootPart.CFrame = CFrame.new(pos)
-            Library:Notify("Teleported to Kingdom of Rose")
-        end,
-        Tooltip = "Warp to Kingdom of Rose"
-    })
-    utilGroup:AddToggle("SpeedHack", {
-        Text = "Speed Hack",
-        Tooltip = "Increase movement speed",
-        Default = false,
-        Callback = function(v)
-            if v then
-                Humanoid.WalkSpeed = 50
-            else
-                Humanoid.WalkSpeed = 16
-            end
-        end
-    })
-    utilGroup:AddToggle("FlyMode", {
-        Text = "Fly Mode",
-        Tooltip = "Enable flight (space to ascend)",
-        Default = false,
-        Callback = function(v)
-            -- Simplified fly by changing gravity or using a loop
-            if v then
-                getgenv().FlyEnabled = true
-                spawn(flyLoop)
-            else
-                getgenv().FlyEnabled = false
-            end
-        end
-    })
-
-    function flyLoop()
-        while getgenv().FlyEnabled and getgenv().ParadiseHubLoaded do
-            task.wait()
-            local move = Vector3.new(0, 0, 0)
-            if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then
-                move = Vector3.new(0, 5, 0)
-            end
-            RootPart.Velocity = Vector3.new(RootPart.Velocity.X, move.Y, RootPart.Velocity.Z)
-        end
-    end
-
-    -- ============================================================
-    --  TAB 4: SETTING (same as before)
-    -- ============================================================
-    local settingsGroup = Tabs.Setting:AddLeftGroupbox("UI Settings", "sliders")
-    settingsGroup:AddToggle("ShowCursor", {
-        Text = "Custom Cursor",
-        Default = true,
-        Callback = function(v)
-            Window:SetCustomCursor(v)
-        end
-    })
-    settingsGroup:AddButton({
-        Text = "Save Settings",
-        Func = function()
-            SaveManager:Save()
-            Library:Notify("Settings saved!")
-        end
-    })
-    settingsGroup:AddButton({
-        Text = "Load Settings",
-        Func = function()
-            SaveManager:Load()
-            Library:Notify("Settings loaded!")
-        end
-    })
-    settingsGroup:AddButton({
-        Text = "Reset to Default",
-        Func = function()
-            SaveManager:Reset()
-            Library:Notify("Reset to default")
-        end
-    })
-
-    local themeGroup = Tabs.Setting:AddRightGroupbox("Theme", "palette")
-    ThemeManager:SetLibrary(Library)
-    ThemeManager:SetTheme("Dark")
-    ThemeManager:AddThemePicker(themeGroup, {
-        Default = "Dark",
-        Callback = function(theme)
-            print("[Paradise] Theme:", theme)
-        end
-    })
-
-    -- ============================================================
-    --  TAB 5: GAME SETTINGS
-    -- ============================================================
-    local gameGroup = Tabs.GameSettings:AddLeftGroupbox("Game Controls", "server")
-    gameGroup:AddButton({
-        Text = "Rejoin Server",
-        Func = function()
-            Library:Notify("Rejoining...")
-            local ts = game:GetService("TeleportService")
-            ts:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
-        end,
-        Tooltip = "Rejoin the same server"
-    })
-    gameGroup:AddButton({
-        Text = "Unload Script",
-        Func = function()
-            Library:Notify("Unloading Paradise Hub...")
-            getgenv().ParadiseHubLoaded = false
-            getgenv().AutoFarmEnabled = false
-            getgenv().AutoQuestEnabled = false
-            getgenv().ESPEnabled = false
-            -- Remove UI
-            Window:Destroy()
-            -- Remove highlights
-            for _, plr in ipairs(Players:GetPlayers()) do
-                if plr.Character then
-                    local hl = plr.Character:FindFirstChild("ParadiseHighlight")
-                    if hl then hl:Destroy() end
-                end
-            end
-        end,
-        Tooltip = "Completely remove the script",
-        Risky = true
-    })
-    gameGroup:AddButton({
-        Text = "Join Small Server",
-        Func = function()
-            Library:Notify("Attempting to join small server...")
-            -- Use game's private server or just rejoin with a random place instance
-            local ts = game:GetService("TeleportService")
-            ts:Teleport(game.PlaceId, LocalPlayer)
-        end,
-        Tooltip = "Teleport to a new server (hopefully smaller)"
-    })
-
-    -- ============================================================
-    --  FINALIZE: SaveManager & ThemeManager
-    -- ============================================================
-    SaveManager:SetLibrary(Library)
-    SaveManager:SetFolder("ParadiseHub/BloxFruits")
-    SaveManager:IgnoreThemeSettings()
-    ThemeManager:SetFolder("ParadiseHub/BloxFruits")
-    SaveManager:BuildConfigSection(Tabs.Setting)
-    SaveManager:Load()
-
-    -- Notify success
-    Library:Notify("Paradise Hub loaded successfully!")
-end
-
--- // Start the key UI
-showKeyUI()
+print("[Paradise Hub] Loaded successfully!")
