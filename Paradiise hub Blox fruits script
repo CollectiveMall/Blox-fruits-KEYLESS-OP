@@ -1,13 +1,13 @@
 --[[
     ============================================================
-    PARADISE HUB – BLOX FRUITS ESP
-    Community Edition v2.0
+    PARADISE HUB – BLOX FRUITS ULTIMATE
+    Community Edition v3.0 – Key-Locked
     ============================================================
-    - Fully rebranded for your community.
+    - Tab Order: AutoFarm → ESP → Utility → Settings
+    - Key System: "OHPARADISENOTAGAIN!" (case-sensitive)
+    - Fully featured ESP, AutoFarm placeholder, Utilities, and more.
     - Open-source ready – fork, modify, share.
-    - Built with Obsidian Library (https://github.com/deividcomsono/Obsidian)
-    - Toggleable ESP with color pickers, distance filter, and line ESP.
-    - Optimized for performance and readability.
+    - Built with Obsidian Library.
     ============================================================
 ]]
 
@@ -23,30 +23,168 @@ if not Library then
     return
 end
 
+-- // ============================================================
+-- // KEY SYSTEM – THE GATEKEEPER
+-- // ============================================================
+local CORRECT_KEY = "OHPARADISENOTAGAIN!" -- Case-sensitive
+local isUnlocked = false
+
 -- // CREATE MAIN WINDOW – PARADISE HUB THEME
 local Window = Library:CreateWindow({
-    Title = "Paradise Hub",              -- Rebranded
-    Footer = "Community Edition v2.0",    -- Your community name
-    Icon = 95816097006870,               -- Change to your own asset ID (optional)
+    Title = "🔐 Paradise Hub – Locked",
+    Footer = "Community Edition v3.0",
+    Icon = 95816097006870,
     NotifySide = "Right",
     ShowCustomCursor = true,
-    -- Tropical color scheme (we'll set via theme later)
 })
 
--- // CREATE TABS
+-- // CREATE TABS (but we'll hide most of them initially)
 local Tabs = {
-    ESP = Window:AddTab("ESP", "eye"),         -- Main ESP controls
-    Combat = Window:AddTab("Combat", "sword"), -- Future combat features
-    Utility = Window:AddTab("Utility", "tool"),-- Future utilities
-    Settings = Window:AddTab("Settings", "settings"), -- UI & config
+    Key = Window:AddTab("🔑 Unlock", "key"),          -- This is the gatekeeper
+    AutoFarm = Window:AddTab("⚔️ AutoFarm", "sword"), -- New order: 1st
+    ESP = Window:AddTab("👁️ ESP", "eye"),             -- 2nd
+    Utility = Window:AddTab("🧰 Utility", "tool"),    -- 3rd
+    Settings = Window:AddTab("⚙️ Settings", "settings"), -- 4th
 }
 
--- // ============================================================
--- // ESP TAB – THE CORE
--- // ============================================================
-local ESPGroup = Tabs.ESP:AddLeftGroupbox("ESP Controls", "target")
+-- // HIDE ALL TABS EXCEPT KEY INITIALLY
+local function SetTabsVisibility(visible)
+    for tabName, tabObj in pairs(Tabs) do
+        if tabName ~= "Key" then
+            tabObj.Visible = visible
+        end
+    end
+end
+SetTabsVisibility(false) -- Lock everything except Key tab
 
--- // 1. ESP TOGGLE (YOUR MAIN REQUEST)
+-- // ============================================================
+-- // KEY TAB – UNLOCK INTERFACE
+-- // ============================================================
+local KeyGroup = Tabs.Key:AddLeftGroupbox("🔑 Enter the Key", "lock")
+KeyGroup:AddLabel({
+    Text = "This hub is protected.\nEnter the correct key to unlock all features.",
+    DoesWrap = true,
+})
+
+-- // INPUT BOX FOR KEY
+local keyInput = KeyGroup:AddInput("KeyInput", {
+    Default = "",
+    Numeric = false,
+    Finished = true, -- Only trigger on Enter press
+    ClearTextOnFocus = false,
+    Text = "Enter Key",
+    Tooltip = "Type the secret key here",
+    Placeholder = "Enter key...",
+    Callback = function(Value)
+        -- We'll handle verification in a separate function
+    end
+})
+
+-- // UNLOCK BUTTON
+local unlockButton = KeyGroup:AddButton({
+    Text = "🔓 Unlock Paradise",
+    Func = function()
+        local entered = Options.KeyInput.Value or ""
+        if entered == CORRECT_KEY then
+            isUnlocked = true
+            -- Update UI
+            Window:SetTitle("🌴 Paradise Hub – Unlocked")
+            SetTabsVisibility(true)
+            Tabs.Key:SetTitle("✅ Unlocked")
+            KeyGroup:AddLabel({
+                Text = "✅ Access Granted!\nWelcome to Paradise Hub, fren.",
+                DoesWrap = true,
+            })
+            -- Remove input and button (optional)
+            keyInput.Visible = false
+            unlockButton.Visible = false
+            Library:Notify({
+                Title = "🔓 Paradise Unlocked",
+                Description = "Full access granted. Enjoy!",
+                Time = 4,
+            })
+        else
+            Library:Notify({
+                Title = "❌ Access Denied",
+                Description = "Incorrect key. Try again, rebel.",
+                Time = 3,
+                Type = "Error",
+            })
+            -- Shake the input box (visual feedback)
+            keyInput:SetValue("") -- Clear the field
+        end
+    end,
+    DoubleClick = false,
+    Tooltip = "Click to verify the key",
+})
+
+-- // ============================================================
+-- // AUTOFARM TAB (NOW FIRST)
+-- // ============================================================
+local AutoFarmGroup = Tabs.AutoFarm:AddLeftGroupbox("🌾 AutoFarm Controls", "sword")
+
+-- // AutoFarm Toggle
+local farmToggle = AutoFarmGroup:AddToggle("Farm_Toggle", {
+    Text = "Enable AutoFarm",
+    Tooltip = "Toggle auto-farming on/off",
+    Default = false,
+    Risky = false,
+    Callback = function(Value)
+        print("[Paradise Hub] AutoFarm toggled:", Value)
+        if Value then
+            Library:Notify({
+                Title = "🌾 AutoFarm Started",
+                Description = "Farming in progress... (placeholder)",
+                Time = 3,
+            })
+        else
+            Library:Notify({
+                Title = "🌾 AutoFarm Stopped",
+                Description = "Farming halted.",
+                Time = 2,
+            })
+        end
+    end
+})
+
+-- // AutoFarm Settings
+AutoFarmGroup:AddSlider("FarmDistance", {
+    Text = "Farm Range (studs)",
+    Default = 150,
+    Min = 50,
+    Max = 400,
+    Rounding = 0,
+    Suffix = " studs",
+    Tooltip = "How far to search for enemies",
+    Callback = function(Value) end
+})
+
+AutoFarmGroup:AddDropdown("FarmTarget", {
+    Values = { "NPCs", "Bosses", "Fruits", "Chests" },
+    Default = 1,
+    Multi = false,
+    Text = "Farm Target",
+    Tooltip = "What to farm",
+    Callback = function(Value) end
+})
+
+AutoFarmGroup:AddButton({
+    Text = "⚔️ Test Farm (Placeholder)",
+    Func = function()
+        Library:Notify({
+            Title = "⚔️ Farm Test",
+            Description = "This feature is coming soon! Stay tuned.",
+            Time = 3,
+        })
+    end,
+})
+
+-- // ============================================================
+-- // ESP TAB (SECOND – YOUR ORIGINAL REQUEST)
+-- // ============================================================
+local ESPGroup = Tabs.ESP:AddLeftGroupbox("👁️ ESP Controls", "eye")
+
+-- // ESP Toggle
 local espToggle = ESPGroup:AddToggle("ESP_Toggle", {
     Text = "Enable ESP",
     Tooltip = "Turn the ESP system on/off",
@@ -60,7 +198,7 @@ local espToggle = ESPGroup:AddToggle("ESP_Toggle", {
     end
 })
 
--- // 2. DISTANCE SLIDER
+-- // Distance Slider
 local distSlider = ESPGroup:AddSlider("DistanceSlider", {
     Text = "Max Distance (studs)",
     Default = 250,
@@ -69,12 +207,10 @@ local distSlider = ESPGroup:AddSlider("DistanceSlider", {
     Rounding = 0,
     Suffix = " studs",
     Tooltip = "Entities beyond this distance are ignored",
-    Callback = function(Value)
-        print("[Paradise Hub] Distance set to:", Value)
-    end
+    Callback = function(Value) end
 })
 
--- // 3. LINE ESP TOGGLE (Extra flair)
+-- // Line ESP Toggle
 local lineToggle = ESPGroup:AddToggle("LineESP_Toggle", {
     Text = "Draw Lines to Entities",
     Tooltip = "Show a line from your character to the target",
@@ -82,7 +218,7 @@ local lineToggle = ESPGroup:AddToggle("LineESP_Toggle", {
     Callback = function(Value) end
 })
 
--- // 4. GLOW EFFECT (Extra feature)
+-- // Glow Effect
 local glowToggle = ESPGroup:AddToggle("Glow_Toggle", {
     Text = "Glow Effect",
     Tooltip = "Adds a glowing aura around entities",
@@ -90,7 +226,7 @@ local glowToggle = ESPGroup:AddToggle("Glow_Toggle", {
     Callback = function(Value) end
 })
 
--- // 5. COLOR PICKERS – Paradise Theme (Teal, Gold, Coral)
+-- // Color Pickers – Paradise Theme
 local playerColor = ESPGroup:AddLabel("Player Color"):AddColorPicker("PlayerColor", {
     Default = Color3.new(0, 0.8, 0.9),    -- Teal
     Title = "Player ESP Color",
@@ -116,31 +252,51 @@ local fruitColor = ESPGroup:AddLabel("Fruit Color"):AddColorPicker("FruitColor",
 })
 
 -- // ============================================================
--- // COMBAT TAB – PLACEHOLDER FOR FUTURE FEATURES
+-- // UTILITY TAB (THIRD)
 -- // ============================================================
-local CombatGroup = Tabs.Combat:AddLeftGroupbox("Combat Features", "sword")
-CombatGroup:AddLabel("Coming soon: Auto-Farm, Aimbot, etc.")
-CombatGroup:AddButton({
-    Text = "Placeholder Button",
+local UtilityGroup = Tabs.Utility:AddLeftGroupbox("🧰 Utility Features", "tool")
+
+-- // Teleport Section
+UtilityGroup:AddLabel("🚀 Teleports")
+UtilityGroup:AddButton({
+    Text = "📍 Teleport to Island (Placeholder)",
     Func = function()
         Library:Notify({
-            Title = "Paradise Hub",
-            Description = "Combat features in development!",
+            Title = "🚀 Teleport",
+            Description = "Teleport feature coming soon!",
             Time = 3,
         })
     end,
 })
 
--- // ============================================================
--- // UTILITY TAB – PLACEHOLDER
--- // ============================================================
-local UtilityGroup = Tabs.Utility:AddLeftGroupbox("Utility Features", "tool")
-UtilityGroup:AddLabel("Coming soon: Teleports, Auto-Collect, etc.")
+UtilityGroup:AddButton({
+    Text = "🔄 Reset Character",
+    Func = function()
+        local player = game.Players.LocalPlayer
+        if player and player.Character then
+            player.Character:BreakJoints()
+            Library:Notify({
+                Title = "🔄 Reset",
+                Description = "Character reset successfully.",
+                Time = 2,
+            })
+        end
+    end,
+})
+
+-- // Collect Section
+UtilityGroup:AddLabel("📦 Auto-Collect")
+UtilityGroup:AddToggle("AutoCollect_Toggle", {
+    Text = "Auto-Collect Fruits/Chests",
+    Tooltip = "Automatically pick up nearby fruits and chests",
+    Default = false,
+    Callback = function(Value) end
+})
 
 -- // ============================================================
--- // SETTINGS TAB – UI CONFIGURATION
+-- // SETTINGS TAB (FOURTH – UI CONFIGURATION)
 -- // ============================================================
-local SettingsGroup = Tabs.Settings:AddLeftGroupbox("UI Settings", "wrench")
+local SettingsGroup = Tabs.Settings:AddLeftGroupbox("⚙️ UI Settings", "wrench")
 SettingsGroup:AddToggle("KeybindMenuOpen", {
     Default = Library.KeybindFrame.Visible,
     Text = "Open Keybind Menu",
@@ -175,7 +331,7 @@ SettingsGroup:AddSlider("UICornerSlider", {
 })
 
 -- // ============================================================
--- // ESP ENGINE – THE HEART OF PARADISE HUB
+-- // ESP ENGINE – THE HEART OF PARADISE HUB (SAME AS BEFORE)
 -- // ============================================================
 
 local RunService = game:GetService("RunService")
@@ -192,7 +348,7 @@ local ESPObjects = {
     Glows = {},
 }
 
--- // HELPER: CREATE BILLBOARD
+-- // HELPER FUNCTIONS (same as before)
 local function CreateBillboard(adornee, text, color, offset)
     local bill = Instance.new("BillboardGui")
     bill.Adornee = adornee
@@ -200,7 +356,6 @@ local function CreateBillboard(adornee, text, color, offset)
     bill.StudsOffset = offset or Vector3.new(0, 3, 0)
     bill.MaxDistance = 500
     bill.AlwaysOnTop = true
-
     local label = Instance.new("TextLabel", bill)
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundTransparency = 1
@@ -215,7 +370,6 @@ local function CreateBillboard(adornee, text, color, offset)
     return bill
 end
 
--- // HELPER: CREATE HIGHLIGHT (BOX)
 local function CreateHighlight(adornee, color)
     local hl = Instance.new("Highlight")
     hl.Adornee = adornee
@@ -227,29 +381,24 @@ local function CreateHighlight(adornee, color)
     return hl
 end
 
--- // HELPER: CREATE GLOW EFFECT (using a transparent cylinder)
 local function CreateGlow(adornee, color)
-    -- We'll use a part with a special material for glow
     local glowPart = Instance.new("Part")
     glowPart.Anchored = true
     glowPart.CanCollide = false
     glowPart.Material = Enum.Material.Neon
     glowPart.BrickColor = BrickColor.new(color)
-    glowPart.Size = Vector3.new(5, 8, 5) -- Adjust size
+    glowPart.Size = Vector3.new(5, 8, 5)
     glowPart.Transparency = 0.7
     glowPart.Shape = Enum.PartType.Cylinder
     glowPart.Parent = adornee
-    -- We'll position it later in the update loop
     return glowPart
 end
 
--- // HELPER: CREATE LINE (using a part)
 local function CreateLine(targetPos, color)
     local startPos = LocalPlayer.Character and LocalPlayer.Character.PrimaryPart and LocalPlayer.Character.PrimaryPart.Position or Vector3.new(0, 0, 0)
     local midPos = (startPos + targetPos) / 2
     local distance = (startPos - targetPos).Magnitude
     if distance < 1 then return nil end
-
     local part = Instance.new("Part")
     part.Anchored = true
     part.CanCollide = false
@@ -262,7 +411,7 @@ local function CreateLine(targetPos, color)
     return part
 end
 
--- // CLEAR ALL ESP OBJECTS
+-- // CLEAR ALL ESP
 function ClearESP()
     for _, v in pairs(ESPObjects.Highlights) do
         if v and v.Parent then v:Destroy() end
@@ -284,13 +433,11 @@ end
 
 -- // MAIN ESP UPDATE LOOP
 local function UpdateESP()
-    -- Check if ESP is enabled
-    if not Toggles.ESP_Toggle.Value then
+    if not Toggles.ESP_Toggle.Value or not isUnlocked then
         ClearESP()
         return
     end
 
-    -- Get settings
     local maxDist = Options.DistanceSlider.Value or 250
     local showLines = Toggles.LineESP_Toggle.Value or false
     local showGlow = Toggles.Glow_Toggle.Value or true
@@ -299,10 +446,9 @@ local function UpdateESP()
     local chestColor = Options.ChestColor.Value or Color3.new(1, 0.4, 0.5)
     local fruitColor = Options.FruitColor.Value or Color3.new(0.8, 0.2, 0.8)
 
-    -- Clear old ESP for refresh
     ClearESP()
 
-    -- // 1. PLAYERS
+    -- Players
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
             local char = player.Character
@@ -310,25 +456,18 @@ local function UpdateESP()
             if root and root.Position then
                 local dist = (LocalPlayer.Character and LocalPlayer.Character.PrimaryPart and LocalPlayer.Character.PrimaryPart.Position - root.Position).Magnitude or 999
                 if dist <= maxDist then
-                    -- Highlight
                     local hl = CreateHighlight(char, plyColor)
                     hl.Parent = char
                     table.insert(ESPObjects.Highlights, hl)
-
-                    -- Billboard
                     local text = player.Name .. " | " .. math.floor(dist) .. "m"
                     local bill = CreateBillboard(root, text, plyColor, Vector3.new(0, 4, 0))
                     bill.Parent = char
                     table.insert(ESPObjects.Billboards, bill)
-
-                    -- Glow
                     if showGlow then
                         local glow = CreateGlow(root, plyColor)
                         glow.Parent = char
                         table.insert(ESPObjects.Glows, glow)
                     end
-
-                    -- Line
                     if showLines then
                         local line = CreateLine(root.Position, plyColor)
                         if line then
@@ -341,7 +480,7 @@ local function UpdateESP()
         end
     end
 
-    -- // 2. NPCS (Enemies, Quest Givers, Shopkeepers)
+    -- NPCs
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
             if not Players:GetPlayerFromCharacter(obj) then
@@ -373,7 +512,7 @@ local function UpdateESP()
         end
     end
 
-    -- // 3. CHESTS (Fruit, Supply, Money)
+    -- Chests
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("Part") then
             local name = obj.Name:lower()
@@ -407,7 +546,7 @@ local function UpdateESP()
         end
     end
 
-    -- // 4. DEVIL FRUITS ON GROUND
+    -- Fruits
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Part") or obj:IsA("Model") then
             local name = obj.Name:lower()
@@ -442,7 +581,7 @@ local function UpdateESP()
     end
 end
 
--- // START THE ESP LOOP
+-- // START THE ESP LOOP (only runs if unlocked)
 RunService.Heartbeat:Connect(UpdateESP)
 
 -- // CLEANUP ON CHARACTER CHANGE
@@ -457,7 +596,7 @@ Library:OnUnload(function()
 end)
 
 -- // ============================================================
--- // CONFIGURATION SYSTEM (Saves settings across sessions)
+-- // CONFIGURATION SYSTEM
 -- // ============================================================
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
@@ -471,12 +610,12 @@ ThemeManager:ApplyToTab(Tabs.Settings)
 SaveManager:LoadAutoloadConfig()
 
 -- // ============================================================
--- // WELCOME NOTIFICATION
+-- // WELCOME NOTIFICATION (only if already unlocked? No, we show key prompt)
 -- // ============================================================
 Library:Notify({
-    Title = "🌴 Paradise Hub Loaded",
-    Description = "Welcome to Paradise! Toggle ESP from the ESP tab.",
+    Title = "🔐 Paradise Hub – Locked",
+    Description = "Enter the key to unlock all features.",
     Time = 5,
 })
 
-print("[Paradise Hub] Successfully initialized. Community Edition v2.0")
+print("[Paradise Hub] Loaded. Waiting for key: OHPARADISENOTAGAIN!")
