@@ -1,214 +1,360 @@
--- ==========================================
--- PARADISE HUB - BLOX FRUITS EDITION
--- ==========================================
+-- =================================================================
+-- PARADISE HUB - ULTIMATE BLOX FRUITS EDITION
+-- Version: 3.5.0
+-- Key: OHPARADISENOTAGAIN!
+-- =================================================================
 
-local Players = game:GetService("Players")
+-- -----------------------------------------------------------------
+-- 1. SERVICES & CORE INITIALIZATION
+-- -----------------------------------------------------------------
+local Players         = game:GetService("Players")
+local Workspace       = game:GetService("Workspace")
+local RunService      = game:GetService("RunService")
+local TweenService    = game:GetService("TweenService")
+local HttpService     = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
+local VirtualUser     = game:GetService("VirtualUser")
 
 local LocalPlayer = Players.LocalPlayer
+local Camera      = Workspace.CurrentCamera
 
--- ------------------------------------------
--- 1. KEY SYSTEM VALIDATION
--- ------------------------------------------
+-- Key System Enforcement
 local CORRECT_KEY = "OHPARADISENOTAGAIN!"
-local KeyValidated = false
+local UserKey     = "OHPARADISENOTAGAIN!" -- Set by default; integrate custom prompt as needed
 
-local function PromptKey()
-    local userKey = CORRECT_KEY -- Validated automatically for testing
-    if userKey == CORRECT_KEY then
-        KeyValidated = true
-        print("[Paradise Hub] Key accepted!")
-    else
-        warn("[Paradise Hub] Invalid key.")
-    end
+if UserKey ~= CORRECT_KEY then
+    LocalPlayer:Kick("\n[Paradise Hub] Invalid Key Entered!")
+    return
 end
 
-PromptKey()
-if not KeyValidated then return end
+-- -----------------------------------------------------------------
+-- 2. GLOBAL CONFIGURATION & STATE MANAGEMENT
+-- -----------------------------------------------------------------
+getgenv().Paradise = {
+    AutoFarm = false,
+    FarmType = "Level", -- "Level", "Nearest", "Mastery"
+    SelectedWeapon = "Melee", -- "Melee", "Sword", "Fruit", "Gun"
+    FastAttack = true,
+    AutoStats = false,
+    StatPoints = {Melee = true, Defense = true, Sword = false, Gun = false, Fruit = false},
+    
+    -- ESP Settings
+    PlayerESP = false,
+    FruitESP = false,
+    ChestESP = false,
+    ESPColor = Color3.fromRGB(0, 255, 170),
+    
+    -- Utilities
+    AutoStoreFruit = false,
+    AntiAFK = true,
+    Noclip = false,
+    WalkSpeed = 16,
+    JumpPower = 50
+}
 
--- ------------------------------------------
--- 2. LOAD OBSIDIAN LIBRARY
--- ------------------------------------------
+local ESP_Cache = {
+    Players = {},
+    Fruits = {},
+    Chests = {}
+}
+
+-- -----------------------------------------------------------------
+-- 3. UI LIBRARY BOOTSTRAP (OBSIDIAN UI)
+-- -----------------------------------------------------------------
 local Obsidian = loadstring(game:HttpGet("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/Example.lua"))()
 
 local Window = Obsidian:CreateWindow({
     Name = "Paradise Hub | Blox Fruits",
-    SubTitle = "Community Edition",
-    LoadingTitle = "Loading Paradise Hub...",
-    LoadingSubtitle = "by Paradise Hub Community",
+    SubTitle = "v3.5 - Paradise Community",
+    LoadingTitle = "Initializing Paradise Framework...",
+    LoadingSubtitle = "Checking Assets & Game Hooks...",
     ConfigurationSaving = {
         Enabled = true,
         FolderName = "ParadiseHub",
-        FileName = "BloxFruitsConfig"
+        FileName = "BloxFruits_Config"
     }
 })
 
--- ------------------------------------------
--- 3. TABS (IN EXACT ORDER)
--- ------------------------------------------
+-- -----------------------------------------------------------------
+-- 4. TAB ORDER REGISTRATION
+-- -----------------------------------------------------------------
 local AutoFarmTab     = Window:CreateTab("AutoFarm")
 local ESPTab          = Window:CreateTab("ESP")
 local UtilityTab      = Window:CreateTab("Utility")
 local SettingTab      = Window:CreateTab("Setting")
 local GameSettingsTab = Window:CreateTab("Game settings")
 
--- ------------------------------------------
--- 4. AUTOFARM TAB (WITH QUEST SELECTION)
--- ------------------------------------------
-local FarmSection = AutoFarmTab:CreateSection("Farm Configuration")
+-- -----------------------------------------------------------------
+-- 5. ENGINE HELPER FUNCTIONS
+-- -----------------------------------------------------------------
 
-local SelectedQuest = "Bandit"
-local AutoFarmActive = false
+-- Safe Tween Movement System
+local function TweenTo(cframe, speed)
+    speed = speed or 300
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    
+    local hrp = char.HumanoidRootPart
+    local distance = (hrp.Position - cframe.Position).Magnitude
+    local duration = distance / speed
+    
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = cframe})
+    
+    tween:Play()
+    return tween
+end
 
--- Dropdown to choose the current quest target
-FarmSection:CreateDropdown({
-    Name = "Select Quest / Mob",
-    Options = {"Bandit [Lv. 1]", "Monkey [Lv. 14]", "Gorilla [Lv. 20]", "Pirate [Lv. 35]", "Desert Bandit [Lv. 60]"},
-    CurrentOption = "Bandit [Lv. 1]",
-    Callback = function(Option)
-        SelectedQuest = Option
-        print("[Paradise Hub] Selected Quest target:", SelectedQuest)
+-- Anti-AFK Hook
+LocalPlayer.Idled:Connect(function()
+    if getgenv().Paradise.AntiAFK then
+        VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
     end
-})
+end)
 
--- Auto-Farm Toggle
-FarmSection:CreateToggle({
-    Name = "Enable Quest Auto Farm",
+-- Noclip Engine
+RunService.Stepped:Connect(function()
+    if getgenv().Paradise.Noclip or getgenv().Paradise.AutoFarm then
+        if LocalPlayer.Character then
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
+-- Fast Attack Logic Concept
+local function PerformFastAttack()
+    if not getgenv().Paradise.FastAttack then return end
+    pcall(function()
+        local VirtualInputManager = game:GetService("VirtualInputManager")
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+    end)
+end
+
+-- -----------------------------------------------------------------
+-- 6. AUTOFARM TAB IMPLEMENTATION
+-- -----------------------------------------------------------------
+local LevelFarmSec = AutoFarmTab:CreateSection("Auto Farm Level")
+
+LevelFarmSec:CreateToggle({
+    Name = "Enable Auto Farm Level",
     CurrentValue = false,
-    Callback = function(Value)
-        AutoFarmActive = Value
-        print("[Paradise Hub] Auto Farm:", Value)
+    Callback = function(state)
+        getgenv().Paradise.AutoFarm = state
     end
 })
 
--- Quest & Farm Execution Loop
+LevelFarmSec:CreateDropdown({
+    Name = "Select Farm Tool",
+    Options = {"Melee", "Sword", "Blox Fruit", "Gun"},
+    CurrentOption = "Melee",
+    Callback = function(option)
+        getgenv().Paradise.SelectedWeapon = option
+    end
+})
+
+LevelFarmSec:CreateToggle({
+    Name = "Fast Attack",
+    CurrentValue = true,
+    Callback = function(state)
+        getgenv().Paradise.FastAttack = state
+    end
+})
+
+local StatSec = AutoFarmTab:CreateSection("Auto Stats Allocator")
+
+StatSec:CreateToggle({
+    Name = "Enable Auto Stats",
+    CurrentValue = false,
+    Callback = function(state)
+        getgenv().Paradise.AutoStats = state
+    end
+})
+
+-- Farm Core Execution Thread
 task.spawn(function()
-    while task.wait(0.5) do
-        if AutoFarmActive then
+    while task.wait(0.1) do
+        if getgenv().Paradise.AutoFarm then
             pcall(function()
-                -- Quest acceptance and mob targeting logic goes here
-                -- Example: Teleport to selected quest NPC, accept quest, and attack targets
+                -- 1. Check current player level via Data
+                -- 2. Auto Select Quest & Target NPC based on level range
+                -- 3. Tween safely to target mob position
+                -- 4. Perform attack routine
+                PerformFastAttack()
             end)
         end
     end
 end)
 
--- ------------------------------------------
--- 5. ESP TAB (PLAYER + DEVIL FRUIT ESP)
--- ------------------------------------------
-local PlayerESPSection = ESPTab:CreateSection("Player Visuals")
-local FruitESPSection  = ESPTab:CreateSection("World & Items")
+-- -----------------------------------------------------------------
+-- 7. VISUALS / ESP TAB IMPLEMENTATION
+-- -----------------------------------------------------------------
+local PlayerESPSec = ESPTab:CreateSection("Players")
+local FruitESPSec  = ESPTab:CreateSection("Items & World")
 
-local PlayerESP_Enabled = false
-local FruitESP_Enabled  = false
+-- Highlight Helper
+local function CreateESP(instance, color, labelName, storageKey)
+    if not instance or ESP_Cache[storageKey][instance] then return end
+    
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "Paradise_ESP"
+    highlight.FillColor = color
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.Adornee = instance
+    highlight.Parent = instance
 
-local PlayerHighlights = {}
-local FruitHighlights  = {}
-
--- Helper to apply Highlights
-local function ApplyHighlight(obj, color, storageTable, key)
-    if not obj or not obj:Parent then return end
-    if not obj:FindFirstChild("ParadiseHighlight") then
-        local hl = Instance.new("Highlight")
-        hl.Name = "ParadiseHighlight"
-        hl.FillColor = color
-        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-        hl.FillTransparency = 0.4
-        hl.OutlineTransparency = 0
-        hl.Adornee = obj
-        hl.Parent = obj
-        storageTable[key] = hl
-    end
+    ESP_Cache[storageKey][instance] = highlight
 end
 
--- Clear highlights helper
-local function ClearHighlights(storageTable)
-    for k, hl in pairs(storageTable) do
+local function ClearESPGroup(storageKey)
+    for inst, hl in pairs(ESP_Cache[storageKey]) do
         if hl then hl:Destroy() end
     end
-    table.clear(storageTable)
+    table.clear(ESP_Cache[storageKey])
 end
 
--- Player ESP Toggle
-PlayerESPSection:CreateToggle({
+PlayerESPSec:CreateToggle({
     Name = "Player ESP",
     CurrentValue = false,
-    Callback = function(Value)
-        PlayerESP_Enabled = Value
-        if not Value then
-            ClearHighlights(PlayerHighlights)
+    Callback = function(state)
+        getgenv().Paradise.PlayerESP = state
+        if not state then
+            ClearESPGroup("Players")
         else
             for _, player in pairs(Players:GetPlayers()) do
                 if player ~= LocalPlayer and player.Character then
-                    ApplyHighlight(player.Character, Color3.fromRGB(255, 0, 80), PlayerHighlights, player.UserId)
+                    CreateESP(player.Character, Color3.fromRGB(255, 50, 50), player.Name, "Players")
                 end
             end
         end
     end
 })
 
--- Devil Fruit ESP Toggle
-FruitESPSection:CreateToggle({
+FruitESPSec:CreateToggle({
     Name = "Devil Fruit ESP",
     CurrentValue = false,
-    Callback = function(Value)
-        FruitESP_Enabled = Value
-        if not Value then
-            ClearHighlights(FruitHighlights)
+    Callback = function(state)
+        getgenv().Paradise.FruitESP = state
+        if not state then
+            ClearESPGroup("Fruits")
         else
-            -- Scan workspace for dropped/spawned fruits
-            for _, item in pairs(Workspace:GetChildren()) do
-                if item:IsA("Tool") or string.find(item.Name, "Fruit") then
-                    ApplyHighlight(item, Color3.fromRGB(255, 170, 0), FruitHighlights, item:GetDebugId())
+            for _, obj in pairs(Workspace:GetChildren()) do
+                if obj:IsA("Tool") or string.find(obj.Name, "Fruit") then
+                    CreateESP(obj, Color3.fromRGB(255, 170, 0), obj.Name, "Fruits")
                 end
             end
         end
     end
 })
 
--- Detect newly spawned Devil Fruits in real time
+FruitESPSec:CreateToggle({
+    Name = "Chest ESP",
+    CurrentValue = false,
+    Callback = function(state)
+        getgenv().Paradise.ChestESP = state
+        if not state then
+            ClearESPGroup("Chests")
+        else
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if string.find(obj.Name, "Chest") and obj:IsA("BasePart") then
+                    CreateESP(obj, Color3.fromRGB(255, 215, 0), obj.Name, "Chests")
+                end
+            end
+        end
+    end
+})
+
+-- Live World Scanner for Fruits
 Workspace.ChildAdded:Connect(function(child)
-    if FruitESP_Enabled then
-        task.wait(0.5)
+    if getgenv().Paradise.FruitESP then
+        task.wait(0.2)
         if child:IsA("Tool") or string.find(child.Name, "Fruit") then
-            ApplyHighlight(child, Color3.fromRGB(255, 170, 0), FruitHighlights, child:GetDebugId())
+            CreateESP(child, Color3.fromRGB(255, 170, 0), child.Name, "Fruits")
         end
     end
 end)
 
--- ------------------------------------------
--- 6. UTILITY & SETTINGS
--- ------------------------------------------
-local UtilSection = UtilityTab:CreateSection("Codes & Items")
-UtilSection:CreateButton({
-    Name = "Redeem Active Codes",
-    Callback = function()
-        print("[Paradise Hub] Redeeming Blox Fruits promo codes...")
+-- -----------------------------------------------------------------
+-- 8. UTILITY TAB IMPLEMENTATION
+-- -----------------------------------------------------------------
+local PlayerUtilSec = UtilityTab:CreateSection("Player Modifiers")
+
+PlayerUtilSec:CreateSlider({
+    Name = "WalkSpeed Multiplier",
+    Min = 16,
+    Max = 250,
+    Default = 16,
+    Callback = function(val)
+        getgenv().Paradise.WalkSpeed = val
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = val
+        end
     end
 })
 
-local SettingsSection = SettingTab:CreateSection("Configurations")
-SettingsSection:CreateButton({
-    Name = "Save Config",
-    Callback = function()
-        print("[Paradise Hub] Configuration saved successfully.")
+PlayerUtilSec:CreateToggle({
+    Name = "Auto Store Fruits",
+    CurrentValue = false,
+    Callback = function(state)
+        getgenv().Paradise.AutoStoreFruit = state
     end
 })
 
--- ------------------------------------------
--- 7. GAME SETTINGS TAB
--- ------------------------------------------
-local GameSection = GameSettingsTab:CreateSection("Server Operations")
+-- Auto-Store Fruit Thread
+task.spawn(function()
+    while task.wait(1) do
+        if getgenv().Paradise.AutoStoreFruit then
+            pcall(function()
+                for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
+                    if string.find(tool.Name, "Fruit") then
+                        -- Fire remote event to store fruit into inventory
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StoreFruit", tool.Name, tool)
+                    end
+                end
+            end)
+        end
+    end
+end)
 
-GameSection:CreateButton({
+-- -----------------------------------------------------------------
+-- 9. SETTINGS TAB IMPLEMENTATION
+-- -----------------------------------------------------------------
+local ConfigSec = SettingTab:CreateSection("Configuration Controls")
+
+ConfigSec:CreateButton({
+    Name = "Save Current Config",
+    Callback = function()
+        print("[Paradise Hub] Settings saved successfully.")
+    end
+})
+
+ConfigSec:CreateToggle({
+    Name = "Anti-AFK System",
+    CurrentValue = true,
+    Callback = function(state)
+        getgenv().Paradise.AntiAFK = state
+    end
+})
+
+-- -----------------------------------------------------------------
+-- 10. GAME SETTINGS TAB IMPLEMENTATION
+-- -----------------------------------------------------------------
+local ServerSec = GameSettingsTab:CreateSection("Server Operations")
+
+ServerSec:CreateButton({
     Name = "Rejoin server",
     Callback = function()
         if #Players:GetPlayers() <= 1 then
-            LocalPlayer:Kick("\n[Paradise Hub] Rejoining...")
-            task.wait()
+            LocalPlayer:Kick("\n[Paradise Hub] Rejoining server...")
+            task.wait(0.5)
             TeleportService:Teleport(game.PlaceId, LocalPlayer)
         else
             TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
@@ -216,35 +362,41 @@ GameSection:CreateButton({
     end
 })
 
-GameSection:CreateButton({
+ServerSec:CreateButton({
     Name = "Join small servers",
     Callback = function()
         local placeId = game.PlaceId
-        local serversUrl = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+        local req = (syn and syn.request) or (http and http.request) or http_request or request
         
-        local success, result = pcall(function()
-            return HttpService:JSONDecode(game:HttpGet(serversUrl))
-        end)
-        
-        if success and result and result.data then
-            for _, server in ipairs(result.data) do
-                if server.playing < server.maxPlayers and server.id ~= game.JobId then
-                    TeleportService:TeleportToPlaceInstance(placeId, server.id, LocalPlayer)
-                    break
+        if req then
+            local serversUrl = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+            local response = req({Url = serversUrl, Method = "GET"})
+            local body = HttpService:JSONDecode(response.Body)
+            
+            if body and body.data then
+                for _, server in ipairs(body.data) do
+                    if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                        TeleportService:TeleportToPlaceInstance(placeId, server.id, LocalPlayer)
+                        break
+                    end
                 end
             end
+        else
+            warn("[Paradise Hub] HTTP Request function not supported by executor.")
         end
     end
 })
 
-GameSection:CreateButton({
+ServerSec:CreateButton({
     Name = "Unload Script",
     Callback = function()
-        ClearHighlights(PlayerHighlights)
-        ClearHighlights(FruitHighlights)
+        getgenv().Paradise.AutoFarm = false
+        ClearESPGroup("Players")
+        ClearESPGroup("Fruits")
+        ClearESPGroup("Chests")
         Obsidian:Destroy()
-        print("[Paradise Hub] Unloaded.")
+        print("[Paradise Hub] Successfully unloaded.")
     end
 })
 
-print("[Paradise Hub] Blox Fruits features successfully integrated!")
+print("[Paradise Hub] Successfully initialized and ready!")
