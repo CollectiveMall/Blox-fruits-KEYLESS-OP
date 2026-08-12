@@ -1,948 +1,421 @@
---[[
-    ============================================================
-    PARADISE HUB – BLOX FRUITS (ULTIMATE EDITION)
-    ============================================================
-    - Fully functional AutoFarm.
-    - Stable Key GUI (OHPARADISENOTAGAIN!).
-    - Tabs: AutoFarm → ESP → Utility → Settings.
-    - ESP with Toggle.
-    - Game Settings: Rejoin, Unload, Join Small Servers.
-    ============================================================
-]]
+-- ============================================================
+--  PARADISE HUB – BLOX FRUITS EDITION
+--  Community: Paradise Hub
+--  Key: OHPARADISENOTAGAIN!
+--  UI: Obsidian (deividcomsono)
+-- ============================================================
 
--- // ============================================================
--- // PART 1: KEY GUI (Standalone, Blink‑Free)
--- // ============================================================
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local CoreGui = game:GetService("CoreGui")
-local StarterGui = game:GetService("StarterGui")
+-- // Safety: prevent double execution
+if getgenv().ParadiseHubLoaded then
+    return
+end
+getgenv().ParadiseHubLoaded = true
 
+-- // Load Obsidian UI Library
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
+local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
+local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
+
+-- // Configuration
+Library.ForceCheckbox = false
+Library.ShowToggleFrameInKeybinds = true
+
+-- // Key System (hardcoded)
 local CORRECT_KEY = "OHPARADISENOTAGAIN!"
-local isUnlocked = false
+local keyVerified = false
 
--- Create the key overlay GUI
-local keyGui = Instance.new("ScreenGui")
-keyGui.Name = "ParadiseKeyOverlay"
-keyGui.Parent = CoreGui
-keyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+-- // Create Key UI (simple popup)
+local function showKeyUI()
+    local keyScreenGui = Instance.new("ScreenGui")
+    keyScreenGui.Name = "ParadiseKeyGUI"
+    keyScreenGui.Parent = game:GetService("CoreGui")
 
--- Background
-local bg = Instance.new("Frame", keyGui)
-bg.Size = UDim2.new(1, 0, 1, 0)
-bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-bg.BackgroundTransparency = 0.6
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 400, 0, 200)
+    frame.Position = UDim2.new(0.5, -200, 0.5, -100)
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    frame.BackgroundTransparency = 0.1
+    frame.BorderSizePixel = 0
+    frame.Parent = keyScreenGui
 
--- Key Frame
-local keyFrame = Instance.new("Frame", keyGui)
-keyFrame.Size = UDim2.new(0, 400, 0, 220)
-keyFrame.Position = UDim2.new(0.5, -200, 0.5, -110)
-keyFrame.BackgroundColor3 = Color3.fromRGB(20, 15, 30)
-keyFrame.BorderSizePixel = 0
-local kfCorner = Instance.new("UICorner", keyFrame)
-kfCorner.CornerRadius = UDim.new(0, 12)
+    -- Title
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 40)
+    title.Position = UDim2.new(0, 0, 0, 10)
+    title.BackgroundTransparency = 1
+    title.Text = "🔑 Paradise Hub"
+    title.TextColor3 = Color3.fromRGB(255, 200, 100)
+    title.TextSize = 28
+    title.Font = Enum.Font.GothamBold
+    title.Parent = frame
 
--- Title
-local keyTitle = Instance.new("TextLabel", keyFrame)
-keyTitle.Size = UDim2.new(1, 0, 0, 40)
-keyTitle.Position = UDim2.new(0, 0, 0, 10)
-keyTitle.BackgroundTransparency = 1
-keyTitle.Text = "🔐 Enter Paradise Key"
-keyTitle.TextColor3 = Color3.fromRGB(200, 150, 255)
-keyTitle.TextScaled = true
-keyTitle.Font = Enum.Font.GothamBold
+    -- Input
+    local input = Instance.new("TextBox")
+    input.Size = UDim2.new(0.8, 0, 0, 40)
+    input.Position = UDim2.new(0.1, 0, 0, 60)
+    input.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    input.TextColor3 = Color3.fromRGB(255, 255, 255)
+    input.TextSize = 18
+    input.Font = Enum.Font.Gotham
+    input.PlaceholderText = "Enter key..."
+    input.Parent = frame
 
--- Subtitle
-local keySub = Instance.new("TextLabel", keyFrame)
-keySub.Size = UDim2.new(1, 0, 0, 30)
-keySub.Position = UDim2.new(0, 0, 0, 55)
-keySub.BackgroundTransparency = 1
-keySub.Text = "This hub is locked. Enter the key to unlock."
-keySub.TextColor3 = Color3.fromRGB(200, 150, 255)
-keySub.TextSize = 14
-keySub.Font = Enum.Font.Gotham
+    -- Submit button
+    local submit = Instance.new("TextButton")
+    submit.Size = UDim2.new(0.4, 0, 0, 40)
+    submit.Position = UDim2.new(0.3, 0, 0, 120)
+    submit.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
+    submit.TextColor3 = Color3.fromRGB(255, 255, 255)
+    submit.TextSize = 20
+    submit.Font = Enum.Font.GothamBold
+    submit.Text = "Unlock"
+    submit.Parent = frame
 
--- Input Box (no blink)
-local keyBox = Instance.new("TextBox", keyFrame)
-keyBox.Size = UDim2.new(0.8, 0, 0, 40)
-keyBox.Position = UDim2.new(0.1, 0, 0, 100)
-keyBox.BackgroundColor3 = Color3.fromRGB(50, 40, 60)
-keyBox.TextColor3 = Color3.fromRGB(200, 150, 255)
-keyBox.PlaceholderColor3 = Color3.fromRGB(150, 100, 200)
-keyBox.PlaceholderText = "Type key here..."
-keyBox.Font = Enum.Font.GothamBold
-keyBox.TextSize = 16
-keyBox.Text = ""
-keyBox.ClearTextOnFocus = false
-local kbCorner = Instance.new("UICorner", keyBox)
-kbCorner.CornerRadius = UDim.new(0, 8)
-
--- Unlock Button
-local unlockBtn = Instance.new("TextButton", keyFrame)
-unlockBtn.Size = UDim2.new(0.4, 0, 0, 40)
-unlockBtn.Position = UDim2.new(0.3, 0, 0, 155)
-unlockBtn.BackgroundColor3 = Color3.fromRGB(150, 100, 255)
-unlockBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-unlockBtn.Text = "🔓 Unlock"
-unlockBtn.Font = Enum.Font.GothamBold
-unlockBtn.TextSize = 18
-local ubCorner = Instance.new("UICorner", unlockBtn)
-ubCorner.CornerRadius = UDim.new(0, 8)
-
--- Error Label
-local errorLabel = Instance.new("TextLabel", keyFrame)
-errorLabel.Size = UDim2.new(1, 0, 0, 20)
-errorLabel.Position = UDim2.new(0, 0, 0, 80)
-errorLabel.BackgroundTransparency = 1
-errorLabel.Text = ""
-errorLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-errorLabel.TextSize = 12
-errorLabel.Font = Enum.Font.Gotham
-
--- Unlock Function
-local function UnlockGUI()
-    if keyBox.Text == CORRECT_KEY then
-        isUnlocked = true
-        keyGui:Destroy()
-        StarterGui:SetCore("SendNotification", {
-            Title = "🔓 Paradise Unlocked",
-            Text = "Welcome, fren!",
-            Duration = 4,
-        })
-        print("[Paradise Hub] Unlocked.")
-        LoadObsidianGUI()
-    else
-        errorLabel.Text = "❌ Incorrect key. Try again."
-        keyBox.Text = ""
-        for i = 1, 5 do
-            task.wait(0.05)
-            keyFrame.Position = UDim2.new(0.5, -200 + (i%2==0 and 10 or -10), 0.5, -110)
+    submit.MouseButton1Click:Connect(function()
+        if input.Text == CORRECT_KEY then
+            keyVerified = true
+            keyScreenGui:Destroy()
+            createMainUI() -- Now build the real GUI
+        else
+            input.Text = "Wrong key!"
+            input.TextColor3 = Color3.fromRGB(255, 50, 50)
+            wait(1)
+            input.Text = ""
+            input.TextColor3 = Color3.fromRGB(255, 255, 255)
         end
-        keyFrame.Position = UDim2.new(0.5, -200, 0.5, -110)
-    end
+    end)
 end
 
-unlockBtn.MouseButton1Click:Connect(UnlockGUI)
-keyBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then UnlockGUI() end
-end)
-
--- // ============================================================
--- // PART 2: FULL PARADISE HUB (Obsidian GUI)
--- // ============================================================
-function LoadObsidianGUI()
-    local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
-    local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
-    local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
-    local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
-
-    if not Library then
-        warn("[Paradise Hub] Failed to load Obsidian Library.")
-        return
-    end
-
+-- // Main UI Creation
+local function createMainUI()
     local Window = Library:CreateWindow({
-        Title = "🌴 Paradise Hub",
+        Title = "Paradise Hub",
         Footer = "Community Edition",
-        Icon = 95816097006870,
+        Icon = 0,
         NotifySide = "Right",
         ShowCustomCursor = true,
+        Resizable = true,
+        Center = true,
+        AutoShow = true,
     })
 
+    -- // Define Tabs (order: AutoFarm, ESP, Utility, Setting, Game Settings)
     local Tabs = {
-        AutoFarm = Window:AddTab("⚔️ AutoFarm", "sword"),
-        ESP = Window:AddTab("👁️ ESP", "eye"),
-        Utility = Window:AddTab("🧰 Utility", "tool"),
-        Settings = Window:AddTab("⚙️ Settings", "settings"),
+        AutoFarm = Window:AddTab("AutoFarm", "sword"),
+        ESP = Window:AddTab("ESP", "eye"),
+        Utility = Window:AddTab("Utility", "wrench"),
+        Setting = Window:AddTab("Setting", "settings"),
+        GameSettings = Window:AddTab("Game Settings", "gamepad-2"),
     }
 
-    -- // ============================================================
-    -- // AUTOFARM TAB (FULLY FUNCTIONAL)
-    -- // ============================================================
-    local AutoFarmGroup = Tabs.AutoFarm:AddLeftGroupbox("🌾 AutoFarm Controls", "sword")
-
-    -- Farm Toggle
-    local farmToggle = AutoFarmGroup:AddToggle("Farm_Toggle", {
-        Text = "Enable AutoFarm",
-        Tooltip = "Toggle auto-farming on/off",
+    -- ============================================================
+    --  TAB 1: AUTOFARM
+    -- ============================================================
+    local autoFarmGroup = Tabs.AutoFarm:AddLeftGroupbox("Farming Controls", "farm")
+    autoFarmGroup:AddToggle("AutoFarmToggle", {
+        Text = "Enable Auto Farm",
+        Tooltip = "Farms nearest NPCs based on your level",
         Default = false,
-        Risky = false,
-        Callback = function(Value)
-            print("[Paradise Hub] AutoFarm toggled:", Value)
-            if Value then
-                Library:Notify({
-                    Title = "🌾 AutoFarm Started",
-                    Description = "Hunting NPCs...",
-                    Time = 3,
-                })
-            else
-                Library:Notify({
-                    Title = "🌾 AutoFarm Stopped",
-                    Description = "Farming halted.",
-                    Time = 2,
-                })
-            end
+        Callback = function(v)
+            print("[Paradise] Auto Farm:", v)
+            -- Place your auto-farm logic here
         end
     })
-
-    -- Farm Settings
-    AutoFarmGroup:AddSlider("FarmDistance", {
-        Text = "Farm Range (studs)",
-        Default = 200,
-        Min = 50,
-        Max = 500,
-        Rounding = 0,
-        Suffix = " studs",
-        Tooltip = "How far to search for NPCs",
-        Callback = function(Value) end
+    autoFarmGroup:AddToggle("AutoQuest", {
+        Text = "Auto Quest",
+        Tooltip = "Automatically accepts and completes quests",
+        Default = false,
+        Callback = function(v)
+            print("[Paradise] Auto Quest:", v)
+        end
     })
-
-    AutoFarmGroup:AddSlider("AttackDelay", {
-        Text = "Attack Speed (seconds)",
-        Default = 0.2,
-        Min = 0.05,
-        Max = 1.0,
-        Rounding = 2,
-        Suffix = "s",
-        Tooltip = "Delay between attacks (lower = faster)",
-        Callback = function(Value) end
-    })
-
-    AutoFarmGroup:AddToggle("WalkToNPC", {
-        Text = "Walk to NPCs",
-        Tooltip = "Automatically move towards the target NPC",
-        Default = true,
-        Callback = function(Value) end
-    })
-
-    AutoFarmGroup:AddToggle("AutoQuest", {
-        Text = "Auto-Complete Quests",
-        Tooltip = "Automatically accept and turn in quests",
-        Default = true,
-        Callback = function(Value) end
-    })
-
-    AutoFarmGroup:AddToggle("LootItems", {
-        Text = "Auto-Loot Drops",
-        Tooltip = "Automatically collect dropped fruits and items",
-        Default = true,
-        Callback = function(Value) end
-    })
-
-    AutoFarmGroup:AddDropdown("FarmTarget", {
-        Values = { "Closest NPC", "Lowest Level", "Highest Level", "Bosses Only" },
+    autoFarmGroup:AddDropdown("FarmMode", {
+        Text = "Farm Mode",
+        Tooltip = "Choose your farming strategy",
+        Values = {"Level", "Boss", "Chests"},
         Default = 1,
-        Multi = false,
-        Text = "Target Priority",
-        Tooltip = "Which NPCs to prioritize",
-        Callback = function(Value) end
+        Callback = function(v)
+            print("[Paradise] Farm Mode:", v)
+        end
     })
 
-    -- Status Label
-    AutoFarmGroup:AddLabel("Status: Idle", true)
-
-    -- // ============================================================
-    -- // ESP TAB (WITH TOGGLE)
-    -- // ============================================================
-    local ESPGroup = Tabs.ESP:AddLeftGroupbox("👁️ ESP Controls", "eye")
-
-    local espToggle = ESPGroup:AddToggle("ESP_Toggle", {
+    -- ============================================================
+    --  TAB 2: ESP (with toggle)
+    -- ============================================================
+    local espGroup = Tabs.ESP:AddLeftGroupbox("Player ESP", "eye")
+    
+    -- Master ESP Toggle
+    espGroup:AddToggle("ESPMasterToggle", {
         Text = "Enable ESP",
-        Tooltip = "Turn the ESP system on/off",
+        Tooltip = "Show/hide all ESP elements",
         Default = false,
-        Risky = false,
-        Callback = function(Value)
-            print("[Paradise Hub] ESP toggled:", Value)
-            if not Value then
-                ClearESP()
+        Callback = function(v)
+            getgenv().ESPEnabled = v
+            if not v then
+                -- Remove all highlights
+                for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
+                    if plr ~= game.Players.LocalPlayer and plr.Character then
+                        local hl = plr.Character:FindFirstChild("ParadiseHighlight")
+                        if hl then hl:Destroy() end
+                    end
+                end
+            else
+                -- Refresh ESP for all players
+                refreshESP()
             end
         end
     })
 
-    ESPGroup:AddSlider("DistanceSlider", {
-        Text = "Max Distance (studs)",
-        Default = 250,
-        Min = 50,
-        Max = 500,
-        Rounding = 0,
-        Suffix = " studs",
-        Tooltip = "Entities beyond this distance are ignored",
-        Callback = function(Value) end
+    -- Color pickers for enemy/allies (with defaults)
+    espGroup:AddColorPicker("EnemyColor", {
+        Default = Color3.fromRGB(255, 50, 50),
+        Title = "Enemy Color",
+        Callback = function(c)
+            getgenv().EnemyColor = c
+            if getgenv().ESPEnabled then refreshESP() end
+        end
+    })
+    espGroup:AddColorPicker("AllyColor", {
+        Default = Color3.fromRGB(50, 255, 50),
+        Title = "Ally Color",
+        Callback = function(c)
+            getgenv().AllyColor = c
+            if getgenv().ESPEnabled then refreshESP() end
+        end
     })
 
-    ESPGroup:AddToggle("LineESP_Toggle", {
-        Text = "Draw Lines to Entities",
-        Default = false,
-        Callback = function(Value) end
-    })
-
-    ESPGroup:AddToggle("Glow_Toggle", {
-        Text = "Glow Effect",
+    -- Additional ESP options
+    espGroup:AddToggle("ESPTeamCheck", {
+        Text = "Team Check",
+        Tooltip = "Color enemies red, allies green (based on team)",
         Default = true,
-        Callback = function(Value) end
+        Callback = function(v)
+            getgenv().ESPTeamCheck = v
+            if getgenv().ESPEnabled then refreshESP() end
+        end
     })
 
-    -- Color Pickers
-    ESPGroup:AddLabel("Player Color"):AddColorPicker("PlayerColor", {
-        Default = Color3.new(0, 0.8, 0.9),
-        Title = "Player ESP Color",
-        Callback = function(Value) end
-    })
-    ESPGroup:AddLabel("NPC Color"):AddColorPicker("NPCColor", {
-        Default = Color3.new(1, 0.7, 0.1),
-        Title = "NPC ESP Color",
-        Callback = function(Value) end
-    })
-    ESPGroup:AddLabel("Chest Color"):AddColorPicker("ChestColor", {
-        Default = Color3.new(1, 0.4, 0.5),
-        Title = "Chest ESP Color",
-        Callback = function(Value) end
-    })
-    ESPGroup:AddLabel("Fruit Color"):AddColorPicker("FruitColor", {
-        Default = Color3.new(0.8, 0.2, 0.8),
-        Title = "Fruit ESP Color",
-        Callback = function(Value) end
-    })
+    -- // ESP Core Functions
+    getgenv().ESPEnabled = false
+    getgenv().EnemyColor = Color3.fromRGB(255, 50, 50)
+    getgenv().AllyColor = Color3.fromRGB(50, 255, 50)
+    getgenv().ESPTeamCheck = true
 
-    -- // ============================================================
-    -- // UTILITY TAB
-    -- // ============================================================
-    local UtilityGroup = Tabs.Utility:AddLeftGroupbox("🧰 Utility Features", "tool")
+    local function applyESP(player)
+        if player == game.Players.LocalPlayer then return end
+        if not player.Character then return end
+        if not getgenv().ESPEnabled then return end
 
-    UtilityGroup:AddButton({
-        Text = "📍 Teleport to Island (Placeholder)",
-        Func = function()
-            Library:Notify({
-                Title = "🚀 Teleport",
-                Description = "Teleport feature coming soon!",
-                Time = 3,
-            })
-        end,
-    })
+        -- Remove old highlight
+        local old = player.Character:FindFirstChild("ParadiseHighlight")
+        if old then old:Destroy() end
 
-    UtilityGroup:AddButton({
-        Text = "🔄 Reset Character",
-        Func = function()
-            local player = game.Players.LocalPlayer
-            if player and player.Character then
-                player.Character:BreakJoints()
-                Library:Notify({
-                    Title = "🔄 Reset",
-                    Description = "Character reset successfully.",
-                    Time = 2,
-                })
-            end
-        end,
-    })
-
-    UtilityGroup:AddToggle("AutoCollect_Toggle", {
-        Text = "Auto-Collect Fruits/Chests",
-        Tooltip = "Automatically pick up nearby fruits and chests",
-        Default = false,
-        Callback = function(Value) end
-    })
-
-    -- // ============================================================
-    -- // SETTINGS TAB (GAME SETTINGS)
-    -- // ============================================================
-    local SettingsGroup = Tabs.Settings:AddLeftGroupbox("⚙️ Game Settings", "settings")
-
-    SettingsGroup:AddButton({
-        Text = "🔄 Rejoin Server",
-        Tooltip = "Reconnect to the same server",
-        Func = function()
-            Library:Notify({
-                Title = "🔄 Rejoining",
-                Description = "Reconnecting to server...",
-                Time = 3,
-            })
-            local ts = game:GetService("TeleportService")
-            ts:TeleportToPlaceInstance(game.PlaceId, game.JobId, game.Players.LocalPlayer)
-        end,
-    })
-
-    SettingsGroup:AddButton({
-        Text = "🧹 Unload Script",
-        Tooltip = "Completely remove Paradise Hub",
-        Func = function()
-            Library:Notify({
-                Title = "🧹 Unloading",
-                Description = "Goodbye, fren!",
-                Time = 2,
-            })
-            task.wait(1)
-            Library:Unload()
-        end,
-    })
-
-    SettingsGroup:AddButton({
-        Text = "📉 Join Small Server",
-        Tooltip = "Find a server with fewer than 10 players",
-        Func = function()
-            Library:Notify({
-                Title = "📉 Searching",
-                Description = "Looking for a small server...",
-                Time = 3,
-            })
-            local HttpService = game:GetService("HttpService")
-            local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?limit=100"
-            local success, response = pcall(function()
-                return game:HttpGet(url)
-            end)
-            if success then
-                local data = HttpService:JSONDecode(response)
-                local smallServer = nil
-                for _, server in pairs(data.data) do
-                    if server.playing < 10 and server.playing > 0 then
-                        smallServer = server
-                        break
-                    end
-                end
-                if smallServer then
-                    Library:Notify({
-                        Title = "📉 Found Server",
-                        Description = "Joining server with " .. smallServer.playing .. " players...",
-                        Time = 3,
-                    })
-                    local ts = game:GetService("TeleportService")
-                    ts:TeleportToPlaceInstance(game.PlaceId, smallServer.id, game.Players.LocalPlayer)
-                else
-                    Library:Notify({
-                        Title = "❌ No Small Server",
-                        Description = "Could not find a server with <10 players.",
-                        Time = 3,
-                    })
-                end
-            else
-                Library:Notify({
-                    Title = "❌ API Error",
-                    Description = "Failed to fetch server list.",
-                    Time = 3,
-                })
-            end
-        end,
-    })
-
-    -- // ============================================================
-    -- // AUTOFARM ENGINE (FULLY FUNCTIONAL)
-    -- // ============================================================
-    local RunService = game:GetService("RunService")
-    local Workspace = game:GetService("Workspace")
-    local VirtualUser = game:GetService("VirtualUser")
-    local UserInputService = game:GetService("UserInputService")
-
-    local farmActive = false
-    local currentTarget = nil
-    local attackCooldown = false
-    local lootCooldown = false
-    local questCooldown = false
-
-    -- // NPC DETECTION (Improved)
-    local function IsNPC(model)
-        if not model or not model:IsA("Model") then return false end
-        if not model:FindFirstChild("Humanoid") then return false end
-        if not model:FindFirstChild("HumanoidRootPart") then return false end
-        if Players:GetPlayerFromCharacter(model) then return false end
-        if model.Humanoid.Health <= 0 then return false end
-        
-        -- Check if it's a valid NPC (not a player, not a dummy)
-        local name = model.Name:lower()
-        if name:find("npc") or name:find("enemy") or name:find("boss") or
-           name:find("marine") or name:find("pirate") or name:find("bandit") or
-           name:find("savage") or name:find("island") or name:find("guard") or
-           name:find("soldier") or name:find("raider") or name:find("skeleton") or
-           name:find("zombie") or name:find("ghoul") or name:find("demon") then
-            return true
-        end
-        
-        -- Check parent folder
-        if model.Parent and model.Parent:IsA("Folder") then
-            local pName = model.Parent.Name:lower()
-            if pName:find("npc") or pName:find("enemy") or pName:find("boss") or
-               pName:find("monster") or pName:find("creature") then
-                return true
-            end
-        end
-        
-        return false
-    end
-
-    -- // FIND BEST NPC TARGET
-    local function FindBestNPC(range)
-        local char = LocalPlayer.Character
-        if not char or not char.PrimaryPart then return nil end
-        local pos = char.PrimaryPart.Position
-        local best = nil
-        local bestScore = -math.huge
-        
-        local targetMode = Options.FarmTarget and Options.FarmTarget.Value or "Closest NPC"
-        
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if IsNPC(obj) then
-                local root = obj.HumanoidRootPart
-                if root and root.Position then
-                    local dist = (pos - root.Position).Magnitude
-                    if dist <= range then
-                        local score = 0
-                        local health = obj.Humanoid.Health
-                        local maxHealth = obj.Humanoid.MaxHealth
-                        
-                        if targetMode == "Closest NPC" then
-                            score = -dist
-                        elseif targetMode == "Lowest Level" then
-                            -- Estimate level from health (higher health = higher level)
-                            score = -maxHealth
-                        elseif targetMode == "Highest Level" then
-                            score = maxHealth
-                        elseif targetMode == "Bosses Only" then
-                            if obj.Name:lower():find("boss") then
-                                score = -dist
-                            else
-                                score = -math.huge
-                            end
-                        end
-                        
-                        -- Prefer lower health targets (faster kills)
-                        if health > 0 then
-                            score = score + (1 - health/maxHealth) * 10
-                        end
-                        
-                        if score > bestScore then
-                            bestScore = score
-                            best = obj
-                        end
-                    end
-                end
-            end
-        end
-        return best
-    end
-
-    -- // MOVE TO TARGET
-    local function MoveToTarget(target)
-        local char = LocalPlayer.Character
-        if not char then return end
-        local humanoid = char:FindFirstChild("Humanoid")
-        if not humanoid then return end
-        local root = target:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-        humanoid:MoveTo(root.Position)
-    end
-
-    -- // ATTACK NPC (Robust Method)
-    local function AttackNPC(target)
-        local char = LocalPlayer.Character
-        if not char or not char.PrimaryPart then return end
-        local root = target:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-        
-        -- Face target
-        char.PrimaryPart.CFrame = CFrame.lookAt(char.PrimaryPart.Position, root.Position)
-        
-        -- Method 1: Mouse Click Simulation
-        local mouse = LocalPlayer:GetMouse()
-        if mouse then
-            local camera = Workspace.CurrentCamera
-            if camera then
-                local screenPos, onScreen = camera:WorldToViewportPoint(root.Position)
-                if onScreen then
-                    pcall(function()
-                        mouse.Move(mouse, screenPos.X, screenPos.Y)
-                        mouse.Button1Down(mouse)
-                        task.wait(0.05)
-                        mouse.Button1Up(mouse)
-                    end)
-                end
-            end
-        end
-        
-        -- Method 2: VirtualUser Click
-        pcall(function()
-            VirtualUser:ClickButton2(Vector2.new(0, 0))
-        end)
-        
-        -- Method 3: Key Press (Q for melee, 1-4 for abilities)
-        pcall(function()
-            VirtualUser:KeyDown("Q")
-            task.wait(0.05)
-            VirtualUser:KeyUp("Q")
-        end)
-        
-        -- Method 4: Direct Humanoid Damage (Fallback)
-        pcall(function()
-            if target.Humanoid then
-                local humanoid = target.Humanoid
-                local damage = 10 -- Base damage
-                humanoid:TakeDamage(damage)
-            end
-        end)
-    end
-
-    -- // LOOT ITEMS (Improved)
-    local function LootNearbyItems()
-        local char = LocalPlayer.Character
-        if not char or not char.PrimaryPart then return end
-        local pos = char.PrimaryPart.Position
-        local range = 25
-        
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("Model") or obj:IsA("Part") or obj:IsA("Tool") then
-                local name = obj.Name:lower()
-                if name:find("fruit") or name:find("chest") or name:find("loot") or 
-                   name:find("money") or name:find("beli") or name:find("drop") then
-                    local root = obj:FindFirstChild("Handle") or obj:FindFirstChild("HumanoidRootPart") or (obj:IsA("Part") and obj)
-                    if root and root.Position then
-                        local dist = (pos - root.Position).Magnitude
-                        if dist < range then
-                            local humanoid = char:FindFirstChild("Humanoid")
-                            if humanoid then
-                                humanoid:MoveTo(root.Position)
-                                task.wait(0.2)
-                                
-                                -- Click to pick up
-                                local mouse = LocalPlayer:GetMouse()
-                                if mouse then
-                                    local camera = Workspace.CurrentCamera
-                                    if camera then
-                                        local screenPos, onScreen = camera:WorldToViewportPoint(root.Position)
-                                        if onScreen then
-                                            pcall(function()
-                                                mouse.Move(mouse, screenPos.X, screenPos.Y)
-                                                mouse.Button1Down(mouse)
-                                                task.wait(0.05)
-                                                mouse.Button1Up(mouse)
-                                            end)
-                                        end
-                                    end
-                                end
-                                break
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    -- // AUTO-COMPLETE QUESTS
-    local function AutoCompleteQuests()
-        local char = LocalPlayer.Character
-        if not char then return end
-        
-        -- Find quest giver NPCs
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and 
-               (obj.Name:lower():find("quest") or obj.Name:lower():find("giver") or 
-                obj.Name:lower():find("npc")) then
-                local root = obj:FindFirstChild("HumanoidRootPart")
-                if root and root.Position then
-                    local dist = (char.PrimaryPart.Position - root.Position).Magnitude
-                    if dist < 30 then
-                        -- Click on quest giver
-                        local mouse = LocalPlayer:GetMouse()
-                        if mouse then
-                            local camera = Workspace.CurrentCamera
-                            if camera then
-                                local screenPos, onScreen = camera:WorldToViewportPoint(root.Position)
-                                if onScreen then
-                                    pcall(function()
-                                        mouse.Move(mouse, screenPos.X, screenPos.Y)
-                                        mouse.Button1Down(mouse)
-                                        task.wait(0.05)
-                                        mouse.Button1Up(mouse)
-                                        task.wait(0.5)
-                                        -- Click again to accept/turn in
-                                        mouse.Button1Down(mouse)
-                                        task.wait(0.05)
-                                        mouse.Button1Up(mouse)
-                                    end)
-                                end
-                            end
-                        end
-                        break
-                    end
-                end
-            end
-        end
-    end
-
-    -- // MAIN AUTOFARM LOOP
-    local function AutoFarmLoop()
-        while isUnlocked do
-            if not Toggles.Farm_Toggle.Value then
-                farmActive = false
-                if AutoFarmGroup and AutoFarmGroup.Objects then
-                    for _, obj in pairs(AutoFarmGroup.Objects) do
-                        if obj:IsA("TextLabel") and obj.Text and obj.Text:find("Status:") then
-                            obj.Text = "Status: Idle"
-                        end
-                    end
-                end
-                task.wait(0.5)
-                goto continue
-            end
-
-            farmActive = true
-            local range = Options.FarmDistance and Options.FarmDistance.Value or 200
-            
-            -- Find best target
-            local target = FindBestNPC(range)
-            
-            if target then
-                currentTarget = target
-                local dist = (LocalPlayer.Character and LocalPlayer.Character.PrimaryPart and 
-                             (LocalPlayer.Character.PrimaryPart.Position - target.HumanoidRootPart.Position).Magnitude) or 0
-                
-                -- Update status
-                if AutoFarmGroup and AutoFarmGroup.Objects then
-                    for _, obj in pairs(AutoFarmGroup.Objects) do
-                        if obj:IsA("TextLabel") and obj.Text and obj.Text:find("Status:") then
-                            obj.Text = "Status: Farming " .. target.Name .. " (" .. math.floor(dist) .. "m)"
-                        end
-                    end
-                end
-                
-                -- Walk to target
-                if Toggles.WalkToNPC and Toggles.WalkToNPC.Value then
-                    MoveToTarget(target)
-                end
-                
-                -- Attack
-                if not attackCooldown then
-                    attackCooldown = true
-                    AttackNPC(target)
-                    local delay = Options.AttackDelay and Options.AttackDelay.Value or 0.2
-                    task.wait(delay)
-                    attackCooldown = false
-                end
-                
-                -- Loot items
-                if Toggles.LootItems and Toggles.LootItems.Value and not lootCooldown then
-                    lootCooldown = true
-                    LootNearbyItems()
-                    task.wait(0.5)
-                    lootCooldown = false
-                end
-                
-                -- Auto quest
-                if Toggles.AutoQuest and Toggles.AutoQuest.Value and not questCooldown then
-                    questCooldown = true
-                    AutoCompleteQuests()
-                    task.wait(2)
-                    questCooldown = false
-                end
-                
-                -- Check if target is dead
-                if target.Humanoid.Health <= 0 then
-                    currentTarget = nil
-                    if AutoFarmGroup and AutoFarmGroup.Objects then
-                        for _, obj in pairs(AutoFarmGroup.Objects) do
-                            if obj:IsA("TextLabel") and obj.Text and obj.Text:find("Status:") then
-                                obj.Text = "Status: Target defeated, searching..."
-                            end
-                        end
-                    end
-                    task.wait(0.5)
-                end
-            else
-                if AutoFarmGroup and AutoFarmGroup.Objects then
-                    for _, obj in pairs(AutoFarmGroup.Objects) do
-                        if obj:IsA("TextLabel") and obj.Text and obj.Text:find("Status:") then
-                            obj.Text = "Status: Searching for NPCs..."
-                        end
-                    end
-                end
-                currentTarget = nil
-                task.wait(0.3)
-            end
-
-            ::continue::
-            task.wait(0.1)
-        end
-    end
-
-    -- Start AutoFarm loop
-    spawn(AutoFarmLoop)
-
-    -- // ============================================================
-    -- // ESP ENGINE (Optimized)
-    -- // ============================================================
-    local ESPObjects = {
-        Highlights = {},
-        Billboards = {},
-        Lines = {},
-        Glows = {},
-    }
-
-    function ClearESP()
-        for _, v in pairs(ESPObjects.Highlights) do
-            if v and v.Parent then pcall(v.Destroy, v) end
-        end
-        for _, v in pairs(ESPObjects.Billboards) do
-            if v and v.Parent then pcall(v.Destroy, v) end
-        end
-        for _, v in pairs(ESPObjects.Lines) do
-            if v and v.Parent then pcall(v.Destroy, v) end
-        end
-        for _, v in pairs(ESPObjects.Glows) do
-            if v and v.Parent then pcall(v.Destroy, v) end
-        end
-        ESPObjects = { Highlights = {}, Billboards = {}, Lines = {}, Glows = {} }
-    end
-
-    local function CreateBillboard(adornee, text, color, offset)
-        local bill = Instance.new("BillboardGui")
-        bill.Adornee = adornee
-        bill.Size = UDim2.new(0, 200, 0, 40)
-        bill.StudsOffset = offset or Vector3.new(0, 3, 0)
-        bill.MaxDistance = 500
-        bill.AlwaysOnTop = true
-        local label = Instance.new("TextLabel", bill)
-        label.Size = UDim2.new(1, 0, 1, 0)
-        label.BackgroundTransparency = 1
-        label.Text = text
-        label.TextColor3 = color
-        label.TextStrokeColor3 = Color3.new(0, 0, 0)
-        label.TextStrokeTransparency = 0.3
-        label.Font = Enum.Font.GothamBold
-        label.TextSize = 14
-        return bill
-    end
-
-    local function CreateHighlight(adornee, color)
         local hl = Instance.new("Highlight")
-        hl.Adornee = adornee
-        hl.FillColor = color
+        hl.Name = "ParadiseHighlight"
+        hl.Parent = player.Character
+        hl.FillColor = getgenv().EnemyColor
         hl.FillTransparency = 0.5
-        hl.OutlineColor = Color3.new(1, 1, 1)
+        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
         hl.OutlineTransparency = 0.2
-        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        return hl
-    end
+        hl.Adornee = player.Character
 
-    local function UpdateESP()
-        if not Toggles.ESP_Toggle.Value then
-            ClearESP()
-            return
-        end
-
-        local maxDist = Options.DistanceSlider and Options.DistanceSlider.Value or 250
-        local plyColor = Options.PlayerColor and Options.PlayerColor.Value or Color3.new(0, 0.8, 0.9)
-        local npcColor = Options.NPCColor and Options.NPCColor.Value or Color3.new(1, 0.7, 0.1)
-        local chestColor = Options.ChestColor and Options.ChestColor.Value or Color3.new(1, 0.4, 0.5)
-        local fruitColor = Options.FruitColor and Options.FruitColor.Value or Color3.new(0.8, 0.2, 0.8)
-
-        ClearESP()
-        local char = LocalPlayer.Character
-        if not char or not char.PrimaryPart then return end
-        local pos = char.PrimaryPart.Position
-
-        -- Players
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-                local root = player.Character:FindFirstChild("HumanoidRootPart") or player.Character.PrimaryPart
-                if root and root.Position then
-                    local dist = (pos - root.Position).Magnitude
-                    if dist <= maxDist then
-                        local hl = CreateHighlight(player.Character, plyColor)
-                        hl.Parent = player.Character
-                        table.insert(ESPObjects.Highlights, hl)
-                        local bill = CreateBillboard(root, player.Name .. " | " .. math.floor(dist) .. "m", plyColor, Vector3.new(0, 4, 0))
-                        bill.Parent = player.Character
-                        table.insert(ESPObjects.Billboards, bill)
-                    end
-                end
-            end
-        end
-
-        -- NPCs
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if IsNPC(obj) then
-                local root = obj.HumanoidRootPart
-                if root and root.Position then
-                    local dist = (pos - root.Position).Magnitude
-                    if dist <= maxDist then
-                        local hl = CreateHighlight(obj, npcColor)
-                        hl.Parent = obj
-                        table.insert(ESPObjects.Highlights, hl)
-                        local bill = CreateBillboard(root, obj.Name .. " | " .. math.floor(dist) .. "m", npcColor, Vector3.new(0, 4, 0))
-                        bill.Parent = obj
-                        table.insert(ESPObjects.Billboards, bill)
-                    end
-                end
-            end
-        end
-
-        -- Chests & Fruits
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("Model") or obj:IsA("Part") then
-                local name = obj.Name:lower()
-                if name:find("chest") or name:find("loot") then
-                    local root = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Handle") or (obj:IsA("Part") and obj)
-                    if root and root.Position then
-                        local dist = (pos - root.Position).Magnitude
-                        if dist <= maxDist then
-                            local hl = CreateHighlight(obj, chestColor)
-                            hl.Parent = obj
-                            table.insert(ESPObjects.Highlights, hl)
-                            local bill = CreateBillboard(root, "📦 Chest | " .. math.floor(dist) .. "m", chestColor, Vector3.new(0, 2, 0))
-                            bill.Parent = obj
-                            table.insert(ESPObjects.Billboards, bill)
-                        end
-                    end
-                elseif name:find("fruit") or name:find("devil") then
-                    local root = obj:FindFirstChild("Handle") or obj:FindFirstChild("HumanoidRootPart") or (obj:IsA("Part") and obj)
-                    if root and root.Position then
-                        local dist = (pos - root.Position).Magnitude
-                        if dist <= maxDist then
-                            local hl = CreateHighlight(obj, fruitColor)
-                            hl.Parent = obj
-                            table.insert(ESPObjects.Highlights, hl)
-                            local bill = CreateBillboard(root, "🍎 Fruit | " .. math.floor(dist) .. "m", fruitColor, Vector3.new(0, 2, 0))
-                            bill.Parent = obj
-                            table.insert(ESPObjects.Billboards, bill)
-                        end
-                    end
+        -- Team-based coloring if enabled
+        if getgenv().ESPTeamCheck then
+            local localTeam = game.Players.LocalPlayer.Team
+            if player.Team and localTeam then
+                if player.Team == localTeam then
+                    hl.FillColor = getgenv().AllyColor
+                else
+                    hl.FillColor = getgenv().EnemyColor
                 end
             end
         end
     end
 
-    -- Start ESP loop
-    RunService.Heartbeat:Connect(UpdateESP)
-    LocalPlayer.CharacterAdded:Connect(ClearESP)
+    local function refreshESP()
+        for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
+            applyESP(plr)
+        end
+    end
 
-    -- // ============================================================
-    -- // CONFIGURATION SYSTEM
-    -- // ============================================================
-    ThemeManager:SetLibrary(Library)
-    SaveManager:SetLibrary(Library)
-    SaveManager:IgnoreThemeSettings()
-    SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
-    ThemeManager:SetFolder("ParadiseHub")
-    SaveManager:SetFolder("ParadiseHub")
-    SaveManager:SetSubFolder("BloxFruits")
-    SaveManager:BuildConfigSection(Tabs.Settings)
-    ThemeManager:ApplyToTab(Tabs.Settings)
-    SaveManager:LoadAutoloadConfig()
+    -- Hook player events
+    game:GetService("Players").PlayerAdded:Connect(function(plr)
+        plr.CharacterAdded:Connect(function()
+            wait(0.5)
+            applyESP(plr)
+        end)
+        -- If character already exists
+        if plr.Character then
+            wait(0.5)
+            applyESP(plr)
+        end
+    end)
 
-    -- // ============================================================
-    -- // WELCOME NOTIFICATION
-    -- // ============================================================
-    Library:Notify({
-        Title = "🌴 Paradise Hub",
-        Description = "Welcome, fren! AutoFarm is ready.",
-        Time = 4,
+    game:GetService("Players").PlayerRemoving:Connect(function(plr)
+        if plr.Character then
+            local hl = plr.Character:FindFirstChild("ParadiseHighlight")
+            if hl then hl:Destroy() end
+        end
+    end)
+
+    -- Also handle local player's team change (re-color all)
+    game.Players.LocalPlayer:GetPropertyChangedSignal("Team"):Connect(function()
+        if getgenv().ESPEnabled then refreshESP() end
+    end)
+
+    -- ============================================================
+    --  TAB 3: UTILITY
+    -- ============================================================
+    local utilGroup = Tabs.Utility:AddLeftGroupbox("Teleports & More", "zap")
+    utilGroup:AddButton({
+        Text = "Teleport to Island (Sea 1)",
+        Func = function()
+            print("[Paradise] Teleporting to Sea 1...")
+            -- Place teleport logic here
+        end,
+        Tooltip = "Warp to Jungle Island"
+    })
+    utilGroup:AddButton({
+        Text = "Teleport to Island (Sea 2)",
+        Func = function()
+            print("[Paradise] Teleporting to Sea 2...")
+        end,
+        Tooltip = "Warp to Kingdom of Rose"
+    })
+    utilGroup:AddToggle("SpeedHack", {
+        Text = "Speed Hack",
+        Tooltip = "Increase movement speed (use at own risk)",
+        Default = false,
+        Callback = function(v)
+            print("[Paradise] Speed Hack:", v)
+        end
+    })
+    utilGroup:AddToggle("FlyMode", {
+        Text = "Fly Mode",
+        Tooltip = "Enable flight (hold space to ascend)",
+        Default = false,
+        Callback = function(v)
+            print("[Paradise] Fly Mode:", v)
+        end
     })
 
-    print("[Paradise Hub] Obsidian GUI loaded successfully.")
+    -- ============================================================
+    --  TAB 4: SETTING
+    -- ============================================================
+    local settingsGroup = Tabs.Setting:AddLeftGroupbox("UI Settings", "sliders")
+    settingsGroup:AddToggle("ShowCursor", {
+        Text = "Custom Cursor",
+        Default = true,
+        Callback = function(v)
+            Window:SetCustomCursor(v)
+        end
+    })
+    settingsGroup:AddButton({
+        Text = "Save Settings",
+        Func = function()
+            SaveManager:Save()
+            Library:Notify("Settings saved!")
+        end,
+        Tooltip = "Save all current toggles and values"
+    })
+    settingsGroup:AddButton({
+        Text = "Load Settings",
+        Func = function()
+            SaveManager:Load()
+            Library:Notify("Settings loaded!")
+        end,
+        Tooltip = "Load previously saved settings"
+    })
+    settingsGroup:AddButton({
+        Text = "Reset to Default",
+        Func = function()
+            SaveManager:Reset()
+            Library:Notify("Settings reset to default")
+        end,
+        Tooltip = "Reset all settings to defaults"
+    })
+
+    -- Theme manager (optional)
+    local themeGroup = Tabs.Setting:AddRightGroupbox("Theme", "palette")
+    ThemeManager:SetLibrary(Library)
+    ThemeManager:SetTheme("Dark")
+    ThemeManager:AddThemePicker(themeGroup, {
+        Default = "Dark",
+        Callback = function(theme)
+            print("[Paradise] Theme changed to:", theme)
+        end
+    })
+
+    -- ============================================================
+    --  TAB 5: GAME SETTINGS (Rejoin, Unload, Small Servers)
+    -- ============================================================
+    local gameGroup = Tabs.GameSettings:AddLeftGroupbox("Game Controls", "server")
+    gameGroup:AddButton({
+        Text = "Rejoin Server",
+        Func = function()
+            Library:Notify("Rejoining...")
+            local ts = game:GetService("TeleportService")
+            local placeId = game.PlaceId
+            local jobId = game.JobId
+            ts:TeleportToPlaceInstance(placeId, jobId, game.Players.LocalPlayer)
+        end,
+        Tooltip = "Teleport back to the same server"
+    })
+    gameGroup:AddButton({
+        Text = "Unload Script",
+        Func = function()
+            Library:Notify("Unloading Paradise Hub...")
+            getgenv().ParadiseHubLoaded = false
+            -- Destroy UI
+            for _, v in pairs(game:GetService("CoreGui"):GetChildren()) do
+                if v.Name == "ParadiseHubGUI" then
+                    v:Destroy()
+                end
+            end
+            -- Remove all highlights
+            for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
+                if plr.Character then
+                    local hl = plr.Character:FindFirstChild("ParadiseHighlight")
+                    if hl then hl:Destroy() end
+                end
+            end
+            -- Clear our environment
+            getgenv().ESPEnabled = nil
+            -- Remove the ScreenGui
+            Window:Destroy()
+        end,
+        Tooltip = "Completely remove the script and its effects",
+        Risky = true -- makes button red
+    })
+    gameGroup:AddButton({
+        Text = "Join Small Server",
+        Func = function()
+            Library:Notify("Searching for a small server...")
+            -- Use the game's teleport API to find a server with few players
+            local ts = game:GetService("TeleportService")
+            local placeId = game.PlaceId
+            -- Attempt to teleport to a private server or a server with low population
+            -- Note: This is a placeholder – you can implement a more robust method
+            ts:Teleport(placeId, game.Players.LocalPlayer)
+        end,
+        Tooltip = "Attempt to join a server with fewer players"
+    })
+
+    -- ============================================================
+    --  FINALIZE: SaveManager & ThemeManager
+    -- ============================================================
+    SaveManager:SetLibrary(Library)
+    SaveManager:SetFolder("ParadiseHub/BloxFruits")
+    SaveManager:IgnoreThemeSettings() -- we handle theme separately
+    SaveManager:SetIgnoreIndexes({}) -- save everything else
+    ThemeManager:SetFolder("ParadiseHub/BloxFruits")
+    SaveManager:BuildConfigSection(Tabs.Setting) -- adds a config section in the Setting tab
+    SaveManager:Load()
+
+    -- // Set the window name for later destruction
+    Window.Instance.Name = "ParadiseHubGUI"
 end
 
--- // Initial notification
-StarterGui:SetCore("SendNotification", {
-    Title = "🔐 Paradise Hub",
-    Text = "Enter key: OHPARADISENOTAGAIN!",
-    Duration = 5,
-})
-
-print("[Paradise Hub] Awaiting key: OHPARADISENOTAGAIN!")
+-- // Entry point: show key UI first
+showKeyUI()
