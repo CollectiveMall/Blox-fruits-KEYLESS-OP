@@ -1,13 +1,13 @@
 --[[
     ============================================================
-    PARADISE HUB – BLOX FRUITS AUTOFARM
-    Community Edition v5.0 – The Rebel Engine
+    PARADISE HUB – BLOX FRUITS AUTOFARM GOD MODE
+    Community Edition v6.0 – The NPC Slayer
     ============================================================
-    - Key-locked GUI (entire window hidden until key entered).
-    - AutoFarm with NPC targeting, combat, and looting.
+    - Research-backed NPC detection and farming.
+    - Walks to targets, attacks, loots, repeats.
+    - Full key-locked GUI (OHPARADISENOTAGAIN!).
     - Game Settings: Rejoin, Unload, Join Small Servers.
-    - All text in light purple (#C896FF).
-    - Built with Obsidian Library.
+    - All text in light purple.
     ============================================================
 ]]
 
@@ -26,50 +26,47 @@ end
 -- // ============================================================
 -- // KEY SYSTEM – GATEKEEPER (ENTIRE GUI LOCKED)
 -- // ============================================================
-local CORRECT_KEY = "OHPARADISENOTAGAIN!" -- Case-sensitive
+local CORRECT_KEY = "OHPARADISENOTAGAIN!"
 local isUnlocked = false
 
--- // CREATE MAIN WINDOW – BUT HIDDEN INITIALLY
+-- // CREATE MAIN WINDOW – HIDDEN INITIALLY
 local Window = Library:CreateWindow({
     Title = "🌴 Paradise Hub",
-    Footer = "Community Edition v5.0",
+    Footer = "Community Edition v6.0",
     Icon = 95816097006870,
     NotifySide = "Right",
     ShowCustomCursor = true,
-    Visible = false, -- Hidden until unlock
+    Visible = false,
 })
 
--- // CREATE KEY OVERLAY (separate GUI that's always visible)
+-- // KEY OVERLAY (separate GUI)
 local keyOverlay = Instance.new("ScreenGui")
 keyOverlay.Name = "ParadiseKeyOverlay"
 keyOverlay.Parent = game:GetService("CoreGui")
 keyOverlay.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- // Background frame (dark transparent)
+-- // Background
 local bg = Instance.new("Frame", keyOverlay)
 bg.Size = UDim2.new(1, 0, 1, 0)
 bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 bg.BackgroundTransparency = 0.6
 
--- // Key input frame (centered)
+-- // Key Frame
 local keyFrame = Instance.new("Frame", keyOverlay)
-keyFrame.Size = UDim2.new(0, 400, 0, 200)
-keyFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
-keyFrame.BackgroundColor3 = Color3.fromRGB(30, 20, 40) -- Dark purple
+keyFrame.Size = UDim2.new(0, 400, 0, 220)
+keyFrame.Position = UDim2.new(0.5, -200, 0.5, -110)
+keyFrame.BackgroundColor3 = Color3.fromRGB(30, 20, 40)
 keyFrame.BorderSizePixel = 0
-keyFrame.ClipsDescendants = true
-
--- // Corner rounding
 local corner = Instance.new("UICorner", keyFrame)
 corner.CornerRadius = UDim.new(0, 12)
 
--- // Title label
+-- // Title
 local titleLabel = Instance.new("TextLabel", keyFrame)
 titleLabel.Size = UDim2.new(1, 0, 0, 40)
 titleLabel.Position = UDim2.new(0, 0, 0, 10)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Text = "🔐 Enter Paradise Key"
-titleLabel.TextColor3 = Color3.fromRGB(200, 150, 255) -- Light purple
+titleLabel.TextColor3 = Color3.fromRGB(200, 150, 255)
 titleLabel.TextScaled = true
 titleLabel.Font = Enum.Font.GothamBold
 
@@ -80,11 +77,10 @@ subLabel.Position = UDim2.new(0, 0, 0, 55)
 subLabel.BackgroundTransparency = 1
 subLabel.Text = "This hub is locked. Enter the key to unlock."
 subLabel.TextColor3 = Color3.fromRGB(200, 150, 255)
-subLabel.TextScaled = false
 subLabel.TextSize = 14
 subLabel.Font = Enum.Font.Gotham
 
--- // Key input box
+-- // Input Box
 local keyBox = Instance.new("TextBox", keyFrame)
 keyBox.Size = UDim2.new(0.8, 0, 0, 40)
 keyBox.Position = UDim2.new(0.1, 0, 0, 100)
@@ -96,33 +92,28 @@ keyBox.Font = Enum.Font.GothamBold
 keyBox.TextSize = 16
 keyBox.Text = ""
 keyBox.ClearTextOnFocus = false
-
--- // Corner for input
 local inputCorner = Instance.new("UICorner", keyBox)
 inputCorner.CornerRadius = UDim.new(0, 8)
 
--- // Unlock button
+-- // Unlock Button
 local unlockBtn = Instance.new("TextButton", keyFrame)
 unlockBtn.Size = UDim2.new(0.4, 0, 0, 40)
-unlockBtn.Position = UDim2.new(0.3, 0, 0, 150)
+unlockBtn.Position = UDim2.new(0.3, 0, 0, 155)
 unlockBtn.BackgroundColor3 = Color3.fromRGB(150, 100, 255)
 unlockBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 unlockBtn.Text = "🔓 Unlock"
 unlockBtn.Font = Enum.Font.GothamBold
 unlockBtn.TextSize = 18
-
--- // Button corner
 local btnCorner = Instance.new("UICorner", unlockBtn)
 btnCorner.CornerRadius = UDim.new(0, 8)
 
--- // Error label (hidden initially)
+-- // Error Label
 local errorLabel = Instance.new("TextLabel", keyFrame)
 errorLabel.Size = UDim2.new(1, 0, 0, 20)
 errorLabel.Position = UDim2.new(0, 0, 0, 80)
 errorLabel.BackgroundTransparency = 1
 errorLabel.Text = ""
 errorLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-errorLabel.TextScaled = false
 errorLabel.TextSize = 12
 errorLabel.Font = Enum.Font.Gotham
 
@@ -130,11 +121,9 @@ errorLabel.Font = Enum.Font.Gotham
 local function UnlockGUI()
     if keyBox.Text == CORRECT_KEY then
         isUnlocked = true
-        keyOverlay:Destroy() -- Remove overlay
-        Window.Visible = true -- Show main GUI
-        -- Create tabs after unlock (we'll do this now)
+        keyOverlay:Destroy()
+        Window.Visible = true
         CreateTabs()
-        -- Notify
         Library:Notify({
             Title = "🔓 Paradise Unlocked",
             Description = "Welcome to Paradise Hub, fren!",
@@ -144,45 +133,37 @@ local function UnlockGUI()
     else
         errorLabel.Text = "❌ Incorrect key. Try again."
         keyBox.Text = ""
-        -- Shake animation (simple)
-        keyFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
         for i = 1, 5 do
             task.wait(0.05)
-            keyFrame.Position = UDim2.new(0.5, -200 + (i%2==0 and 10 or -10), 0.5, -100)
+            keyFrame.Position = UDim2.new(0.5, -200 + (i%2==0 and 10 or -10), 0.5, -110)
         end
-        keyFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
+        keyFrame.Position = UDim2.new(0.5, -200, 0.5, -110)
     end
 end
 
--- // Bind unlock button
 unlockBtn.MouseButton1Click:Connect(UnlockGUI)
-
--- // Bind Enter key on input box
 keyBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        UnlockGUI()
-    end
+    if enterPressed then UnlockGUI() end
 end)
 
 -- // ============================================================
--- // TAB CREATION (only after unlock)
+-- // TAB CREATION (after unlock)
 -- // ============================================================
 local Tabs = {}
 local AutoFarmGroup, ESPGroup, UtilityGroup, SettingsGroup
 
 function CreateTabs()
-    -- Tab order: AutoFarm → ESP → Utility → Game Settings
     Tabs.AutoFarm = Window:AddTab("⚔️ AutoFarm", "sword")
     Tabs.ESP = Window:AddTab("👁️ ESP", "eye")
     Tabs.Utility = Window:AddTab("🧰 Utility", "tool")
     Tabs.GameSettings = Window:AddTab("⚙️ Game Settings", "settings")
 
     -- // ============================================================
-    -- // AUTOFARM TAB – THE REBEL ENGINE
+    -- // AUTOFARM TAB – THE NPC SLAYER
     -- // ============================================================
     AutoFarmGroup = Tabs.AutoFarm:AddLeftGroupbox("🌾 AutoFarm Controls", "sword")
 
-    -- AutoFarm Toggle
+    -- Farm Toggle
     local farmToggle = AutoFarmGroup:AddToggle("Farm_Toggle", {
         Text = "Enable AutoFarm",
         Tooltip = "Toggle auto-farming on/off",
@@ -193,7 +174,7 @@ function CreateTabs()
             if Value then
                 Library:Notify({
                     Title = "🌾 AutoFarm Started",
-                    Description = "Farming in progress...",
+                    Description = "Slaying NPCs...",
                     Time = 3,
                 })
             else
@@ -206,7 +187,7 @@ function CreateTabs()
         end
     })
 
-    -- Farm Range
+    -- Range Slider
     AutoFarmGroup:AddSlider("FarmDistance", {
         Text = "Farm Range (studs)",
         Default = 150,
@@ -214,37 +195,53 @@ function CreateTabs()
         Max = 400,
         Rounding = 0,
         Suffix = " studs",
-        Tooltip = "How far to search for enemies",
+        Tooltip = "How far to search for NPCs",
         Callback = function(Value) end
     })
 
     -- Attack Delay
     AutoFarmGroup:AddSlider("AttackDelay", {
-        Text = "Attack Delay (seconds)",
-        Default = 0.5,
+        Text = "Attack Speed (seconds)",
+        Default = 0.3,
         Min = 0.1,
-        Max = 2,
+        Max = 1.0,
         Rounding = 1,
         Suffix = "s",
-        Tooltip = "Time between attacks",
+        Tooltip = "Delay between attacks (lower = faster)",
         Callback = function(Value) end
     })
 
-    -- Target Type
+    -- Walk to NPC Toggle
+    AutoFarmGroup:AddToggle("WalkToNPC", {
+        Text = "Walk to NPCs",
+        Tooltip = "Automatically move towards the target NPC",
+        Default = true,
+        Callback = function(Value) end
+    })
+
+    -- Loot Toggle
+    AutoFarmGroup:AddToggle("LootItems", {
+        Text = "Auto-Loot Drops",
+        Tooltip = "Automatically collect dropped fruits and items",
+        Default = true,
+        Callback = function(Value) end
+    })
+
+    -- Target Filter
     AutoFarmGroup:AddDropdown("FarmTarget", {
-        Values = { "NPCs", "Bosses", "Fruits", "Chests" },
+        Values = { "All NPCs", "Bosses Only", "Lowest Level", "Highest Level" },
         Default = 1,
         Multi = false,
-        Text = "Farm Target",
-        Tooltip = "What to farm",
+        Text = "Target Priority",
+        Tooltip = "Which NPCs to prioritize",
         Callback = function(Value) end
     })
 
-    -- AutoFarm Status Label
+    -- Status Label
     AutoFarmGroup:AddLabel("Status: Idle", true, "FarmStatus")
 
     -- // ============================================================
-    -- // ESP TAB (SECOND – YOUR ORIGINAL REQUEST)
+    -- // ESP TAB (SECOND)
     -- // ============================================================
     ESPGroup = Tabs.ESP:AddLeftGroupbox("👁️ ESP Controls", "eye")
 
@@ -254,10 +251,7 @@ function CreateTabs()
         Default = false,
         Risky = false,
         Callback = function(Value)
-            print("[Paradise Hub] ESP toggled:", Value)
-            if not Value then
-                ClearESP()
-            end
+            if not Value then ClearESP() end
         end
     })
 
@@ -268,20 +262,17 @@ function CreateTabs()
         Max = 500,
         Rounding = 0,
         Suffix = " studs",
-        Tooltip = "Entities beyond this distance are ignored",
         Callback = function(Value) end
     })
 
     ESPGroup:AddToggle("LineESP_Toggle", {
         Text = "Draw Lines to Entities",
-        Tooltip = "Show a line from your character to the target",
         Default = false,
         Callback = function(Value) end
     })
 
     ESPGroup:AddToggle("Glow_Toggle", {
         Text = "Glow Effect",
-        Tooltip = "Adds a glowing aura around entities",
         Default = true,
         Callback = function(Value) end
     })
@@ -339,15 +330,8 @@ function CreateTabs()
         end,
     })
 
-    UtilityGroup:AddToggle("AutoCollect_Toggle", {
-        Text = "Auto-Collect Fruits/Chests",
-        Tooltip = "Automatically pick up nearby fruits and chests",
-        Default = false,
-        Callback = function(Value) end
-    })
-
     -- // ============================================================
-    -- // GAME SETTINGS TAB (FOURTH – YOUR REQUEST)
+    -- // GAME SETTINGS TAB (FOURTH)
     -- // ============================================================
     SettingsGroup = Tabs.GameSettings:AddLeftGroupbox("⚙️ Game Settings", "settings")
 
@@ -362,9 +346,7 @@ function CreateTabs()
                 Time = 3,
             })
             local ts = game:GetService("TeleportService")
-            local placeId = game.PlaceId
-            local jobId = game.JobId
-            ts:TeleportToPlaceInstance(placeId, jobId, game.Players.LocalPlayer)
+            ts:TeleportToPlaceInstance(game.PlaceId, game.JobId, game.Players.LocalPlayer)
         end,
     })
 
@@ -380,7 +362,6 @@ function CreateTabs()
             })
             task.wait(1)
             Library:Unload()
-            -- Also destroy key overlay if it exists
             if keyOverlay then keyOverlay:Destroy() end
         end,
     })
@@ -395,55 +376,50 @@ function CreateTabs()
                 Description = "Looking for a small server...",
                 Time = 3,
             })
-            -- Use Roblox API to find small server
-            local function findSmallServer()
-                local HttpService = game:GetService("HttpService")
-                local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?limit=100"
-                local success, response = pcall(function()
-                    return game:HttpGet(url)
-                end)
-                if success then
-                    local data = HttpService:JSONDecode(response)
-                    local smallServer = nil
-                    for _, server in pairs(data.data) do
-                        if server.playing < 10 and server.playing > 0 then
-                            smallServer = server
-                            break
-                        end
+            local HttpService = game:GetService("HttpService")
+            local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?limit=100"
+            local success, response = pcall(function()
+                return game:HttpGet(url)
+            end)
+            if success then
+                local data = HttpService:JSONDecode(response)
+                local smallServer = nil
+                for _, server in pairs(data.data) do
+                    if server.playing < 10 and server.playing > 0 then
+                        smallServer = server
+                        break
                     end
-                    if smallServer then
-                        Library:Notify({
-                            Title = "📉 Found Server",
-                            Description = "Joining server with " .. smallServer.playing .. " players...",
-                            Time = 3,
-                        })
-                        local ts = game:GetService("TeleportService")
-                        ts:TeleportToPlaceInstance(game.PlaceId, smallServer.id, game.Players.LocalPlayer)
-                    else
-                        Library:Notify({
-                            Title = "❌ No Small Server",
-                            Description = "Could not find a server with <10 players.",
-                            Time = 3,
-                        })
-                    end
+                end
+                if smallServer then
+                    Library:Notify({
+                        Title = "📉 Found Server",
+                        Description = "Joining server with " .. smallServer.playing .. " players...",
+                        Time = 3,
+                    })
+                    local ts = game:GetService("TeleportService")
+                    ts:TeleportToPlaceInstance(game.PlaceId, smallServer.id, game.Players.LocalPlayer)
                 else
                     Library:Notify({
-                        Title = "❌ API Error",
-                        Description = "Failed to fetch server list.",
+                        Title = "❌ No Small Server",
+                        Description = "Could not find a server with <10 players.",
                         Time = 3,
                     })
                 end
+            else
+                Library:Notify({
+                    Title = "❌ API Error",
+                    Description = "Failed to fetch server list.",
+                    Time = 3,
+                })
             end
-            findSmallServer()
         end,
     })
 
-    -- Apply light purple theme to all text
     ApplyLightPurpleTheme()
 end
 
 -- // ============================================================
--- // THEME: LIGHT PURPLE APPLIER
+-- // THEME: LIGHT PURPLE
 -- // ============================================================
 function ApplyLightPurpleTheme()
     local LightPurple = Color3.fromRGB(200, 150, 255)
@@ -455,27 +431,48 @@ function ApplyLightPurpleTheme()
             recolor(child)
         end
     end
-    -- Apply to all groupboxes
     for _, group in pairs({AutoFarmGroup, ESPGroup, UtilityGroup, SettingsGroup}) do
-        if group then
-            recolor(group)
-        end
+        if group then recolor(group) end
     end
 end
 
 -- // ============================================================
--- // AUTOFARM ENGINE – THE REBEL HEART
+-- // AUTOFARM ENGINE – BLOX FRUITS NPC SLAYER
 -- // ============================================================
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
+local VirtualUser = game:GetService("VirtualUser")
 
 local farmActive = false
-local farmTarget = nil
+local currentTarget = nil
 local attackCooldown = false
+local lootCooldown = false
 
--- // Find nearest NPC
+-- // DETECT NPCs (Blox Fruits specific)
+local function IsNPC(model)
+    -- Must have Humanoid and HumanoidRootPart
+    if not model:IsA("Model") then return false end
+    if not model:FindFirstChild("Humanoid") then return false end
+    if not model:FindFirstChild("HumanoidRootPart") then return false end
+    -- Must NOT be a player
+    if Players:GetPlayerFromCharacter(model) then return false end
+    -- Must have health > 0
+    if model.Humanoid.Health <= 0 then return false end
+    -- Name filter (common NPC names in Blox Fruits)
+    local name = model.Name:lower()
+    if name:find("npc") or name:find("enemy") or name:find("boss") or name:find("marine") or name:find("pirate") or name:find("bandit") or name:find("savage") or name:find("island") then
+        return true
+    end
+    -- Also detect by parent (often under "NPCs" or "Enemies" folder)
+    if model.Parent and (model.Parent.Name:lower():find("npc") or model.Parent.Name:lower():find("enemy")) then
+        return true
+    end
+    return false
+end
+
+-- // FIND NEAREST NPC
 local function FindNearestNPC(range)
     local char = LocalPlayer.Character
     if not char or not char.PrimaryPart then return nil end
@@ -484,35 +481,46 @@ local function FindNearestNPC(range)
     local nearestDist = range
 
     for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
-            if not Players:GetPlayerFromCharacter(obj) then
-                local root = obj.HumanoidRootPart
+        if IsNPC(obj) then
+            local root = obj.HumanoidRootPart
+            if root and root.Position then
                 local dist = (pos - root.Position).Magnitude
-                if dist < nearestDist and obj.Humanoid.Health > 0 then
+                if dist < nearestDist then
                     nearest = obj
                     nearestDist = dist
                 end
             end
         end
     end
-    return nearest
+    return nearest, nearestDist
 end
 
--- // Attack NPC (simulate click or ability)
-local function AttackNPC(target)
-    if not target or not target.PrimaryPart then return end
+-- // MOVE TO TARGET
+local function MoveToTarget(target)
     local char = LocalPlayer.Character
     if not char or not char.PrimaryPart then return end
+    local humanoid = char:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    local root = target:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    humanoid:MoveTo(root.Position)
+end
+
+-- // ATTACK NPC (simulate click + ability)
+local function AttackNPC(target)
+    local char = LocalPlayer.Character
+    if not char or not char.PrimaryPart then return end
+    local root = target:FindFirstChild("HumanoidRootPart")
+    if not root then return end
 
     -- Face target
-    char.PrimaryPart.CFrame = CFrame.lookAt(char.PrimaryPart.Position, target.PrimaryPart.Position)
+    char.PrimaryPart.CFrame = CFrame.lookAt(char.PrimaryPart.Position, root.Position)
 
-    -- Simulate mouse click (for combat)
+    -- Simulate mouse click (for sword/melee)
     local mouse = LocalPlayer:GetMouse()
     if mouse then
-        -- Get screen position of target
         local camera = Workspace.CurrentCamera
-        local screenPos, onScreen = camera:WorldToViewportPoint(target.PrimaryPart.Position)
+        local screenPos, onScreen = camera:WorldToViewportPoint(root.Position)
         if onScreen then
             mouse.Move(mouse, screenPos.X, screenPos.Y)
             mouse.Button1Down(mouse)
@@ -520,9 +528,64 @@ local function AttackNPC(target)
             mouse.Button1Up(mouse)
         end
     end
+
+    -- Also use VirtualUser for reliable click (if available)
+    pcall(function()
+        VirtualUser:ClickButton2(Vector2.new(0, 0))
+    end)
+
+    -- Use ability (if you have a fruit equipped) – press 1, 2, 3 keys
+    -- This is optional but we can simulate key presses
+    pcall(function()
+        -- Press Q for melee, or 1 for first ability
+        VirtualUser:KeyDown("Q")
+        task.wait(0.1)
+        VirtualUser:KeyUp("Q")
+    end)
 end
 
--- // AutoFarm Loop
+-- // LOOT ITEMS (fruits, chests, etc.)
+local function LootNearbyItems()
+    local char = LocalPlayer.Character
+    if not char or not char.PrimaryPart then return end
+    local pos = char.PrimaryPart.Position
+    local range = 20 -- Loot range
+
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") or obj:IsA("Part") then
+            local name = obj.Name:lower()
+            if name:find("fruit") or name:find("chest") or name:find("loot") or name:find("money") then
+                local root = obj:FindFirstChild("Handle") or obj:FindFirstChild("HumanoidRootPart") or (obj:IsA("Part") and obj)
+                if root and root.Position then
+                    local dist = (pos - root.Position).Magnitude
+                    if dist < range then
+                        -- Walk to it and collect
+                        local humanoid = char:FindFirstChild("Humanoid")
+                        if humanoid then
+                            humanoid:MoveTo(root.Position)
+                            task.wait(0.2)
+                            -- Simulate click to pick up
+                            local mouse = LocalPlayer:GetMouse()
+                            if mouse then
+                                local camera = Workspace.CurrentCamera
+                                local screenPos, onScreen = camera:WorldToViewportPoint(root.Position)
+                                if onScreen then
+                                    mouse.Move(mouse, screenPos.X, screenPos.Y)
+                                    mouse.Button1Down(mouse)
+                                    task.wait(0.05)
+                                    mouse.Button1Up(mouse)
+                                end
+                            end
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- // MAIN AUTOFARM LOOP
 local function AutoFarmLoop()
     while isUnlocked and RunService.Heartbeat do
         if not Toggles.Farm_Toggle.Value then
@@ -531,37 +594,66 @@ local function AutoFarmLoop()
                 Options.FarmStatus:SetText("Status: Idle")
             end
             task.wait(0.5)
-            continue
+            goto continue
         end
 
         farmActive = true
         local range = Options.FarmDistance.Value or 150
-        local target = FindNearestNPC(range)
+        local target, dist = FindNearestNPC(range)
 
         if target then
+            currentTarget = target
             if Options.FarmStatus then
-                Options.FarmStatus:SetText("Status: Fighting " .. target.Name)
+                Options.FarmStatus:SetText("Status: Farming " .. target.Name .. " (" .. math.floor(dist) .. "m)")
             end
+
+            -- Move to target
+            if Toggles.WalkToNPC.Value then
+                MoveToTarget(target)
+            end
+
+            -- Attack
             if not attackCooldown then
                 attackCooldown = true
                 AttackNPC(target)
-                task.wait(Options.AttackDelay.Value or 0.5)
+                task.wait(Options.AttackDelay.Value or 0.3)
                 attackCooldown = false
+            end
+
+            -- Loot items
+            if Toggles.LootItems.Value and not lootCooldown then
+                lootCooldown = true
+                LootNearbyItems()
+                task.wait(0.5)
+                lootCooldown = false
+            end
+
+            -- Check if target is dead
+            if target.Humanoid.Health <= 0 then
+                currentTarget = nil
+                if Options.FarmStatus then
+                    Options.FarmStatus:SetText("Status: Target defeated, searching...")
+                end
+                task.wait(0.5) -- Wait for respawn
             end
         else
             if Options.FarmStatus then
-                Options.FarmStatus:SetText("Status: Searching for targets...")
+                Options.FarmStatus:SetText("Status: Searching for NPCs...")
             end
+            currentTarget = nil
+            task.wait(0.3)
         end
-        task.wait(0.2)
+
+        ::continue::
+        task.wait(0.1)
     end
 end
 
--- // Start AutoFarm loop
+-- // START AUTOFARM LOOP
 spawn(AutoFarmLoop)
 
 -- // ============================================================
--- // ESP ENGINE (from previous version, simplified)
+-- // ESP ENGINE (simplified but functional)
 -- // ============================================================
 local ESPObjects = { Highlights = {}, Billboards = {}, Lines = {}, Glows = {} }
 
@@ -610,8 +702,6 @@ local function UpdateESP()
     end
 
     local maxDist = Options.DistanceSlider.Value or 250
-    local showLines = Toggles.LineESP_Toggle.Value or false
-    local showGlow = Toggles.Glow_Toggle.Value or true
     local plyColor = Options.PlayerColor.Value or Color3.new(0, 0.8, 0.9)
     local npcColor = Options.NPCColor.Value or Color3.new(1, 0.7, 0.1)
     local chestColor = Options.ChestColor.Value or Color3.new(1, 0.4, 0.5)
@@ -640,9 +730,9 @@ local function UpdateESP()
 
     -- NPCs
     for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
-            if not Players:GetPlayerFromCharacter(obj) then
-                local root = obj.HumanoidRootPart
+        if IsNPC(obj) then
+            local root = obj.HumanoidRootPart
+            if root and root.Position then
                 local dist = (LocalPlayer.Character and LocalPlayer.Character.PrimaryPart and LocalPlayer.Character.PrimaryPart.Position - root.Position).Magnitude or 999
                 if dist <= maxDist then
                     local hl = CreateHighlight(obj, npcColor)
@@ -691,10 +781,7 @@ local function UpdateESP()
     end
 end
 
--- // ESP update loop
 RunService.Heartbeat:Connect(UpdateESP)
-
--- // Cleanup on character change
 LocalPlayer.CharacterAdded:Connect(ClearESP)
 
 -- // ============================================================
@@ -707,15 +794,11 @@ SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
 ThemeManager:SetFolder("ParadiseHub")
 SaveManager:SetFolder("ParadiseHub")
 SaveManager:SetSubFolder("BloxFruits")
--- We'll build config after tabs are created (deferred)
-task.wait(0.5) -- Wait for tabs to be created
+task.wait(0.5)
 if Tabs.GameSettings then
     SaveManager:BuildConfigSection(Tabs.GameSettings)
     ThemeManager:ApplyToTab(Tabs.GameSettings)
     SaveManager:LoadAutoloadConfig()
 end
 
--- // ============================================================
--- // NOTIFICATION (Shown after unlock)
--- // ============================================================
 print("[Paradise Hub] Loaded. Awaiting key: OHPARADISENOTAGAIN!")
