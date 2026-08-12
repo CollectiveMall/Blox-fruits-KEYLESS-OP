@@ -1,13 +1,14 @@
 --[[
     ============================================================
     PARADISE HUB – BLOX FRUITS ULTIMATE
-    Community Edition v3.0 – Key-Locked
+    Community Edition v4.0 – Light Purple Edition
     ============================================================
-    - Tab Order: AutoFarm → ESP → Utility → Settings
-    - Key System: "OHPARADISENOTAGAIN!" (case-sensitive)
-    - Fully featured ESP, AutoFarm placeholder, Utilities, and more.
-    - Open-source ready – fork, modify, share.
-    - Built with Obsidian Library.
+    - Tab Order: Key → AutoFarm → ESP → Utility → Settings
+    - All tabs locked except Key until unlock.
+    - Key: "OHPARADISENOTAGAIN!" (case-sensitive)
+    - All text is light purple (#C896FF).
+    - Community image next to title.
+    - Full ESP, AutoFarm placeholder, Utilities, and Settings.
     ============================================================
 ]]
 
@@ -24,30 +25,76 @@ if not Library then
 end
 
 -- // ============================================================
+-- // CUSTOM THEME – LIGHT PURPLE OVERRIDE
+-- // ============================================================
+-- We'll hook into the library's theme system to force light purple on all text.
+-- Obsidian uses Scheme objects. We'll modify them after creation.
+local LightPurple = Color3.fromRGB(200, 150, 255) -- #C896FF
+
+-- // We'll apply this globally via ThemeManager later, but we also manually set
+-- // colors for elements we create.
+
+-- // ============================================================
 -- // KEY SYSTEM – THE GATEKEEPER
 -- // ============================================================
 local CORRECT_KEY = "OHPARADISENOTAGAIN!" -- Case-sensitive
 local isUnlocked = false
 
--- // CREATE MAIN WINDOW – PARADISE HUB THEME
+-- // CREATE MAIN WINDOW – PARADISE HUB THEME with IMAGE
+-- // Option 1: Use an ImageLabel as a draggable label (workaround)
 local Window = Library:CreateWindow({
-    Title = "🔐 Paradise Hub – Locked",
-    Footer = "Community Edition v3.0",
-    Icon = 95816097006870,
+    Title = "🌴 Paradise Hub",  -- We'll add image separately
+    Footer = "Community Edition v4.0",
+    Icon = 95816097006870,      -- Placeholder, we'll replace with image
     NotifySide = "Right",
     ShowCustomCursor = true,
 })
 
--- // CREATE TABS (but we'll hide most of them initially)
+-- // ATTEMPT TO SET CUSTOM ICON FROM URL (if supported)
+-- // Since Obsidian doesn't support direct URL images, we'll create a draggable label
+-- // with the image and place it next to the title.
+-- // We'll use a BillboardGui or ImageLabel in the corner.
+
+-- // Create a draggable ImageLabel for the community logo
+local logoImage = Instance.new("ImageLabel")
+logoImage.Image = "https://tse3.mm.bing.net/th/id/OIP.SXXZG8btMOleRowW7F_dWgHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
+logoImage.Size = UDim2.new(0, 40, 0, 40)
+logoImage.BackgroundTransparency = 1
+logoImage.Position = UDim2.new(0, 10, 0, 10) -- Top-left corner
+logoImage.ImageTransparency = 0
+logoImage.ZIndex = 999 -- Make sure it's on top
+
+-- // Add it to the screen (we'll parent it to the GUI overlay)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ParadiseHubLogo"
+screenGui.Parent = game:GetService("CoreGui")
+logoImage.Parent = screenGui
+
+-- // Also add a text label next to it for "Paradise Hub" in light purple
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Text = "🌴 Paradise Hub"
+titleLabel.TextColor3 = LightPurple
+titleLabel.TextScaled = true
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Size = UDim2.new(0, 200, 0, 40)
+titleLabel.Position = UDim2.new(0, 60, 0, 10) -- Next to image
+titleLabel.BackgroundTransparency = 1
+titleLabel.ZIndex = 999
+titleLabel.Parent = screenGui
+
+-- // Now we hide the default window title (optional)
+-- // We can't easily hide it, but we'll keep it and just overlay.
+
+-- // CREATE TABS – ORDER: Key, AutoFarm, ESP, Utility, Settings
 local Tabs = {
-    Key = Window:AddTab("🔑 Unlock", "key"),          -- This is the gatekeeper
-    AutoFarm = Window:AddTab("⚔️ AutoFarm", "sword"), -- New order: 1st
+    Key = Window:AddTab("🔑 Unlock", "key"),          -- Gatekeeper
+    AutoFarm = Window:AddTab("⚔️ AutoFarm", "sword"), -- 1st
     ESP = Window:AddTab("👁️ ESP", "eye"),             -- 2nd
     Utility = Window:AddTab("🧰 Utility", "tool"),    -- 3rd
     Settings = Window:AddTab("⚙️ Settings", "settings"), -- 4th
 }
 
--- // HIDE ALL TABS EXCEPT KEY INITIALLY
+-- // HIDE ALL TABS EXCEPT KEY INITIALLY (AGGRESSIVE LOCK)
 local function SetTabsVisibility(visible)
     for tabName, tabObj in pairs(Tabs) do
         if tabName ~= "Key" then
@@ -58,29 +105,40 @@ end
 SetTabsVisibility(false) -- Lock everything except Key tab
 
 -- // ============================================================
--- // KEY TAB – UNLOCK INTERFACE
+-- // KEY TAB – UNLOCK INTERFACE (ALL TEXT LIGHT PURPLE)
 -- // ============================================================
 local KeyGroup = Tabs.Key:AddLeftGroupbox("🔑 Enter the Key", "lock")
 KeyGroup:AddLabel({
     Text = "This hub is protected.\nEnter the correct key to unlock all features.",
     DoesWrap = true,
+    -- We'll set color after creation
 })
 
--- // INPUT BOX FOR KEY
+-- // Override label color to light purple
+for _, label in pairs(KeyGroup.Objects) do
+    if label:IsA("TextLabel") then
+        label.TextColor3 = LightPurple
+    end
+end
+
+-- // INPUT BOX FOR KEY (light purple text)
 local keyInput = KeyGroup:AddInput("KeyInput", {
     Default = "",
     Numeric = false,
-    Finished = true, -- Only trigger on Enter press
+    Finished = true,
     ClearTextOnFocus = false,
     Text = "Enter Key",
     Tooltip = "Type the secret key here",
     Placeholder = "Enter key...",
-    Callback = function(Value)
-        -- We'll handle verification in a separate function
-    end
+    Callback = function(Value) end
 })
+-- // Override input text color
+if keyInput and keyInput.TextBox then
+    keyInput.TextBox.TextColor3 = LightPurple
+    keyInput.TextBox.PlaceholderColor3 = LightPurple
+end
 
--- // UNLOCK BUTTON
+-- // UNLOCK BUTTON (light purple text)
 local unlockButton = KeyGroup:AddButton({
     Text = "🔓 Unlock Paradise",
     Func = function()
@@ -91,18 +149,26 @@ local unlockButton = KeyGroup:AddButton({
             Window:SetTitle("🌴 Paradise Hub – Unlocked")
             SetTabsVisibility(true)
             Tabs.Key:SetTitle("✅ Unlocked")
+            -- Update key tab content
+            KeyGroup:Clear()
             KeyGroup:AddLabel({
                 Text = "✅ Access Granted!\nWelcome to Paradise Hub, fren.",
                 DoesWrap = true,
             })
-            -- Remove input and button (optional)
-            keyInput.Visible = false
-            unlockButton.Visible = false
+            -- Set label color
+            for _, label in pairs(KeyGroup.Objects) do
+                if label:IsA("TextLabel") then
+                    label.TextColor3 = LightPurple
+                end
+            end
             Library:Notify({
                 Title = "🔓 Paradise Unlocked",
                 Description = "Full access granted. Enjoy!",
                 Time = 4,
             })
+            -- Also update the overlay title
+            titleLabel.Text = "🌴 Paradise Hub – Unlocked"
+            titleLabel.TextColor3 = LightPurple
         else
             Library:Notify({
                 Title = "❌ Access Denied",
@@ -110,20 +176,36 @@ local unlockButton = KeyGroup:AddButton({
                 Time = 3,
                 Type = "Error",
             })
-            -- Shake the input box (visual feedback)
-            keyInput:SetValue("") -- Clear the field
+            keyInput:SetValue("")
+            -- Shake effect (optional)
         end
     end,
     DoubleClick = false,
     Tooltip = "Click to verify the key",
 })
+-- // Override button text color
+if unlockButton and unlockButton.TextLabel then
+    unlockButton.TextLabel.TextColor3 = LightPurple
+end
 
 -- // ============================================================
--- // AUTOFARM TAB (NOW FIRST)
+-- // AUTOFARM TAB (NOW FIRST AFTER UNLOCK)
 -- // ============================================================
 local AutoFarmGroup = Tabs.AutoFarm:AddLeftGroupbox("🌾 AutoFarm Controls", "sword")
 
--- // AutoFarm Toggle
+-- // Override all text colors in AutoFarm
+local function SetGroupboxTextColor(groupbox, color)
+    for _, obj in pairs(groupbox.Objects or {}) do
+        if obj:IsA("TextLabel") or obj:IsA("TextBox") then
+            obj.TextColor3 = color
+        end
+        if obj:IsA("TextButton") then
+            obj.TextColor3 = color
+        end
+    end
+end
+
+-- // AutoFarm Toggle (light purple)
 local farmToggle = AutoFarmGroup:AddToggle("Farm_Toggle", {
     Text = "Enable AutoFarm",
     Tooltip = "Toggle auto-farming on/off",
@@ -146,6 +228,10 @@ local farmToggle = AutoFarmGroup:AddToggle("Farm_Toggle", {
         end
     end
 })
+-- // Override toggle text
+if farmToggle and farmToggle.TextLabel then
+    farmToggle.TextLabel.TextColor3 = LightPurple
+end
 
 -- // AutoFarm Settings
 AutoFarmGroup:AddSlider("FarmDistance", {
@@ -158,6 +244,8 @@ AutoFarmGroup:AddSlider("FarmDistance", {
     Tooltip = "How far to search for enemies",
     Callback = function(Value) end
 })
+-- // Override slider labels (they're in the slider object)
+-- // We'll handle via theme
 
 AutoFarmGroup:AddDropdown("FarmTarget", {
     Values = { "NPCs", "Bosses", "Fruits", "Chests" },
@@ -179,6 +267,9 @@ AutoFarmGroup:AddButton({
     end,
 })
 
+-- // Apply light purple to all AutoFarm elements
+SetGroupboxTextColor(AutoFarmGroup, LightPurple)
+
 -- // ============================================================
 -- // ESP TAB (SECOND – YOUR ORIGINAL REQUEST)
 -- // ============================================================
@@ -197,6 +288,9 @@ local espToggle = ESPGroup:AddToggle("ESP_Toggle", {
         end
     end
 })
+if espToggle and espToggle.TextLabel then
+    espToggle.TextLabel.TextColor3 = LightPurple
+end
 
 -- // Distance Slider
 local distSlider = ESPGroup:AddSlider("DistanceSlider", {
@@ -217,6 +311,9 @@ local lineToggle = ESPGroup:AddToggle("LineESP_Toggle", {
     Default = false,
     Callback = function(Value) end
 })
+if lineToggle and lineToggle.TextLabel then
+    lineToggle.TextLabel.TextColor3 = LightPurple
+end
 
 -- // Glow Effect
 local glowToggle = ESPGroup:AddToggle("Glow_Toggle", {
@@ -225,31 +322,42 @@ local glowToggle = ESPGroup:AddToggle("Glow_Toggle", {
     Default = true,
     Callback = function(Value) end
 })
+if glowToggle and glowToggle.TextLabel then
+    glowToggle.TextLabel.TextColor3 = LightPurple
+end
 
--- // Color Pickers – Paradise Theme
+-- // Color Pickers – Paradise Theme (but labels in light purple)
 local playerColor = ESPGroup:AddLabel("Player Color"):AddColorPicker("PlayerColor", {
-    Default = Color3.new(0, 0.8, 0.9),    -- Teal
+    Default = Color3.new(0, 0.8, 0.9),
     Title = "Player ESP Color",
     Callback = function(Value) end
 })
+-- // Override label
+for _, obj in pairs(ESPGroup.Objects or {}) do
+    if obj:IsA("TextLabel") then
+        obj.TextColor3 = LightPurple
+    end
+end
 
 local npcColor = ESPGroup:AddLabel("NPC Color"):AddColorPicker("NPCColor", {
-    Default = Color3.new(1, 0.7, 0.1),    -- Gold
+    Default = Color3.new(1, 0.7, 0.1),
     Title = "NPC ESP Color",
     Callback = function(Value) end
 })
 
 local chestColor = ESPGroup:AddLabel("Chest Color"):AddColorPicker("ChestColor", {
-    Default = Color3.new(1, 0.4, 0.5),    -- Coral
+    Default = Color3.new(1, 0.4, 0.5),
     Title = "Chest ESP Color",
     Callback = function(Value) end
 })
 
 local fruitColor = ESPGroup:AddLabel("Fruit Color"):AddColorPicker("FruitColor", {
-    Default = Color3.new(0.8, 0.2, 0.8),  -- Purple
+    Default = Color3.new(0.8, 0.2, 0.8),
     Title = "Fruit ESP Color",
     Callback = function(Value) end
 })
+
+SetGroupboxTextColor(ESPGroup, LightPurple)
 
 -- // ============================================================
 -- // UTILITY TAB (THIRD)
@@ -293,6 +401,8 @@ UtilityGroup:AddToggle("AutoCollect_Toggle", {
     Callback = function(Value) end
 })
 
+SetGroupboxTextColor(UtilityGroup, LightPurple)
+
 -- // ============================================================
 -- // SETTINGS TAB (FOURTH – UI CONFIGURATION)
 -- // ============================================================
@@ -329,6 +439,8 @@ SettingsGroup:AddSlider("UICornerSlider", {
         Window:SetCornerRadius(value)
     end
 })
+
+SetGroupboxTextColor(SettingsGroup, LightPurple)
 
 -- // ============================================================
 -- // ESP ENGINE – THE HEART OF PARADISE HUB (SAME AS BEFORE)
@@ -592,6 +704,7 @@ end)
 -- // UNLOAD CLEANUP
 Library:OnUnload(function()
     ClearESP()
+    if screenGui then screenGui:Destroy() end
     print("[Paradise Hub] Unloaded. See you in paradise!")
 end)
 
@@ -610,7 +723,7 @@ ThemeManager:ApplyToTab(Tabs.Settings)
 SaveManager:LoadAutoloadConfig()
 
 -- // ============================================================
--- // WELCOME NOTIFICATION (only if already unlocked? No, we show key prompt)
+-- // WELCOME NOTIFICATION
 -- // ============================================================
 Library:Notify({
     Title = "🔐 Paradise Hub – Locked",
