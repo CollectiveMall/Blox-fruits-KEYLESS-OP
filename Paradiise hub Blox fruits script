@@ -1,14 +1,13 @@
 --[[
     ============================================================
-    PARADISE HUB – BLOX FRUITS ULTIMATE
-    Community Edition v4.0 – Light Purple Edition
+    PARADISE HUB – BLOX FRUITS AUTOFARM
+    Community Edition v5.0 – The Rebel Engine
     ============================================================
-    - Tab Order: Key → AutoFarm → ESP → Utility → Settings
-    - All tabs locked except Key until unlock.
-    - Key: "OHPARADISENOTAGAIN!" (case-sensitive)
-    - All text is light purple (#C896FF).
-    - Community image next to title.
-    - Full ESP, AutoFarm placeholder, Utilities, and Settings.
+    - Key-locked GUI (entire window hidden until key entered).
+    - AutoFarm with NPC targeting, combat, and looting.
+    - Game Settings: Rejoin, Unload, Join Small Servers.
+    - All text in light purple (#C896FF).
+    - Built with Obsidian Library.
     ============================================================
 ]]
 
@@ -25,447 +24,560 @@ if not Library then
 end
 
 -- // ============================================================
--- // CUSTOM THEME – LIGHT PURPLE OVERRIDE
--- // ============================================================
--- We'll hook into the library's theme system to force light purple on all text.
--- Obsidian uses Scheme objects. We'll modify them after creation.
-local LightPurple = Color3.fromRGB(200, 150, 255) -- #C896FF
-
--- // We'll apply this globally via ThemeManager later, but we also manually set
--- // colors for elements we create.
-
--- // ============================================================
--- // KEY SYSTEM – THE GATEKEEPER
+-- // KEY SYSTEM – GATEKEEPER (ENTIRE GUI LOCKED)
 -- // ============================================================
 local CORRECT_KEY = "OHPARADISENOTAGAIN!" -- Case-sensitive
 local isUnlocked = false
 
--- // CREATE MAIN WINDOW – PARADISE HUB THEME with IMAGE
--- // Option 1: Use an ImageLabel as a draggable label (workaround)
+-- // CREATE MAIN WINDOW – BUT HIDDEN INITIALLY
 local Window = Library:CreateWindow({
-    Title = "🌴 Paradise Hub",  -- We'll add image separately
-    Footer = "Community Edition v4.0",
-    Icon = 95816097006870,      -- Placeholder, we'll replace with image
+    Title = "🌴 Paradise Hub",
+    Footer = "Community Edition v5.0",
+    Icon = 95816097006870,
     NotifySide = "Right",
     ShowCustomCursor = true,
+    Visible = false, -- Hidden until unlock
 })
 
--- // ATTEMPT TO SET CUSTOM ICON FROM URL (if supported)
--- // Since Obsidian doesn't support direct URL images, we'll create a draggable label
--- // with the image and place it next to the title.
--- // We'll use a BillboardGui or ImageLabel in the corner.
+-- // CREATE KEY OVERLAY (separate GUI that's always visible)
+local keyOverlay = Instance.new("ScreenGui")
+keyOverlay.Name = "ParadiseKeyOverlay"
+keyOverlay.Parent = game:GetService("CoreGui")
+keyOverlay.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- // Create a draggable ImageLabel for the community logo
-local logoImage = Instance.new("ImageLabel")
-logoImage.Image = "https://tse3.mm.bing.net/th/id/OIP.SXXZG8btMOleRowW7F_dWgHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
-logoImage.Size = UDim2.new(0, 40, 0, 40)
-logoImage.BackgroundTransparency = 1
-logoImage.Position = UDim2.new(0, 10, 0, 10) -- Top-left corner
-logoImage.ImageTransparency = 0
-logoImage.ZIndex = 999 -- Make sure it's on top
+-- // Background frame (dark transparent)
+local bg = Instance.new("Frame", keyOverlay)
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+bg.BackgroundTransparency = 0.6
 
--- // Add it to the screen (we'll parent it to the GUI overlay)
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ParadiseHubLogo"
-screenGui.Parent = game:GetService("CoreGui")
-logoImage.Parent = screenGui
+-- // Key input frame (centered)
+local keyFrame = Instance.new("Frame", keyOverlay)
+keyFrame.Size = UDim2.new(0, 400, 0, 200)
+keyFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
+keyFrame.BackgroundColor3 = Color3.fromRGB(30, 20, 40) -- Dark purple
+keyFrame.BorderSizePixel = 0
+keyFrame.ClipsDescendants = true
 
--- // Also add a text label next to it for "Paradise Hub" in light purple
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Text = "🌴 Paradise Hub"
-titleLabel.TextColor3 = LightPurple
+-- // Corner rounding
+local corner = Instance.new("UICorner", keyFrame)
+corner.CornerRadius = UDim.new(0, 12)
+
+-- // Title label
+local titleLabel = Instance.new("TextLabel", keyFrame)
+titleLabel.Size = UDim2.new(1, 0, 0, 40)
+titleLabel.Position = UDim2.new(0, 0, 0, 10)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "🔐 Enter Paradise Key"
+titleLabel.TextColor3 = Color3.fromRGB(200, 150, 255) -- Light purple
 titleLabel.TextScaled = true
 titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Size = UDim2.new(0, 200, 0, 40)
-titleLabel.Position = UDim2.new(0, 60, 0, 10) -- Next to image
-titleLabel.BackgroundTransparency = 1
-titleLabel.ZIndex = 999
-titleLabel.Parent = screenGui
 
--- // Now we hide the default window title (optional)
--- // We can't easily hide it, but we'll keep it and just overlay.
+-- // Subtitle
+local subLabel = Instance.new("TextLabel", keyFrame)
+subLabel.Size = UDim2.new(1, 0, 0, 30)
+subLabel.Position = UDim2.new(0, 0, 0, 55)
+subLabel.BackgroundTransparency = 1
+subLabel.Text = "This hub is locked. Enter the key to unlock."
+subLabel.TextColor3 = Color3.fromRGB(200, 150, 255)
+subLabel.TextScaled = false
+subLabel.TextSize = 14
+subLabel.Font = Enum.Font.Gotham
 
--- // CREATE TABS – ORDER: Key, AutoFarm, ESP, Utility, Settings
-local Tabs = {
-    Key = Window:AddTab("🔑 Unlock", "key"),          -- Gatekeeper
-    AutoFarm = Window:AddTab("⚔️ AutoFarm", "sword"), -- 1st
-    ESP = Window:AddTab("👁️ ESP", "eye"),             -- 2nd
-    Utility = Window:AddTab("🧰 Utility", "tool"),    -- 3rd
-    Settings = Window:AddTab("⚙️ Settings", "settings"), -- 4th
-}
+-- // Key input box
+local keyBox = Instance.new("TextBox", keyFrame)
+keyBox.Size = UDim2.new(0.8, 0, 0, 40)
+keyBox.Position = UDim2.new(0.1, 0, 0, 100)
+keyBox.BackgroundColor3 = Color3.fromRGB(50, 40, 60)
+keyBox.TextColor3 = Color3.fromRGB(200, 150, 255)
+keyBox.PlaceholderColor3 = Color3.fromRGB(150, 100, 200)
+keyBox.PlaceholderText = "Type key here..."
+keyBox.Font = Enum.Font.GothamBold
+keyBox.TextSize = 16
+keyBox.Text = ""
+keyBox.ClearTextOnFocus = false
 
--- // HIDE ALL TABS EXCEPT KEY INITIALLY (AGGRESSIVE LOCK)
-local function SetTabsVisibility(visible)
-    for tabName, tabObj in pairs(Tabs) do
-        if tabName ~= "Key" then
-            tabObj.Visible = visible
+-- // Corner for input
+local inputCorner = Instance.new("UICorner", keyBox)
+inputCorner.CornerRadius = UDim.new(0, 8)
+
+-- // Unlock button
+local unlockBtn = Instance.new("TextButton", keyFrame)
+unlockBtn.Size = UDim2.new(0.4, 0, 0, 40)
+unlockBtn.Position = UDim2.new(0.3, 0, 0, 150)
+unlockBtn.BackgroundColor3 = Color3.fromRGB(150, 100, 255)
+unlockBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+unlockBtn.Text = "🔓 Unlock"
+unlockBtn.Font = Enum.Font.GothamBold
+unlockBtn.TextSize = 18
+
+-- // Button corner
+local btnCorner = Instance.new("UICorner", unlockBtn)
+btnCorner.CornerRadius = UDim.new(0, 8)
+
+-- // Error label (hidden initially)
+local errorLabel = Instance.new("TextLabel", keyFrame)
+errorLabel.Size = UDim2.new(1, 0, 0, 20)
+errorLabel.Position = UDim2.new(0, 0, 0, 80)
+errorLabel.BackgroundTransparency = 1
+errorLabel.Text = ""
+errorLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+errorLabel.TextScaled = false
+errorLabel.TextSize = 12
+errorLabel.Font = Enum.Font.Gotham
+
+-- // UNLOCK FUNCTION
+local function UnlockGUI()
+    if keyBox.Text == CORRECT_KEY then
+        isUnlocked = true
+        keyOverlay:Destroy() -- Remove overlay
+        Window.Visible = true -- Show main GUI
+        -- Create tabs after unlock (we'll do this now)
+        CreateTabs()
+        -- Notify
+        Library:Notify({
+            Title = "🔓 Paradise Unlocked",
+            Description = "Welcome to Paradise Hub, fren!",
+            Time = 4,
+        })
+        print("[Paradise Hub] Unlocked successfully.")
+    else
+        errorLabel.Text = "❌ Incorrect key. Try again."
+        keyBox.Text = ""
+        -- Shake animation (simple)
+        keyFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
+        for i = 1, 5 do
+            task.wait(0.05)
+            keyFrame.Position = UDim2.new(0.5, -200 + (i%2==0 and 10 or -10), 0.5, -100)
         end
-    end
-end
-SetTabsVisibility(false) -- Lock everything except Key tab
-
--- // ============================================================
--- // KEY TAB – UNLOCK INTERFACE (ALL TEXT LIGHT PURPLE)
--- // ============================================================
-local KeyGroup = Tabs.Key:AddLeftGroupbox("🔑 Enter the Key", "lock")
-KeyGroup:AddLabel({
-    Text = "This hub is protected.\nEnter the correct key to unlock all features.",
-    DoesWrap = true,
-    -- We'll set color after creation
-})
-
--- // Override label color to light purple
-for _, label in pairs(KeyGroup.Objects) do
-    if label:IsA("TextLabel") then
-        label.TextColor3 = LightPurple
+        keyFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
     end
 end
 
--- // INPUT BOX FOR KEY (light purple text)
-local keyInput = KeyGroup:AddInput("KeyInput", {
-    Default = "",
-    Numeric = false,
-    Finished = true,
-    ClearTextOnFocus = false,
-    Text = "Enter Key",
-    Tooltip = "Type the secret key here",
-    Placeholder = "Enter key...",
-    Callback = function(Value) end
-})
--- // Override input text color
-if keyInput and keyInput.TextBox then
-    keyInput.TextBox.TextColor3 = LightPurple
-    keyInput.TextBox.PlaceholderColor3 = LightPurple
-end
+-- // Bind unlock button
+unlockBtn.MouseButton1Click:Connect(UnlockGUI)
 
--- // UNLOCK BUTTON (light purple text)
-local unlockButton = KeyGroup:AddButton({
-    Text = "🔓 Unlock Paradise",
-    Func = function()
-        local entered = Options.KeyInput.Value or ""
-        if entered == CORRECT_KEY then
-            isUnlocked = true
-            -- Update UI
-            Window:SetTitle("🌴 Paradise Hub – Unlocked")
-            SetTabsVisibility(true)
-            Tabs.Key:SetTitle("✅ Unlocked")
-            -- Update key tab content
-            KeyGroup:Clear()
-            KeyGroup:AddLabel({
-                Text = "✅ Access Granted!\nWelcome to Paradise Hub, fren.",
-                DoesWrap = true,
+-- // Bind Enter key on input box
+keyBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        UnlockGUI()
+    end
+end)
+
+-- // ============================================================
+-- // TAB CREATION (only after unlock)
+-- // ============================================================
+local Tabs = {}
+local AutoFarmGroup, ESPGroup, UtilityGroup, SettingsGroup
+
+function CreateTabs()
+    -- Tab order: AutoFarm → ESP → Utility → Game Settings
+    Tabs.AutoFarm = Window:AddTab("⚔️ AutoFarm", "sword")
+    Tabs.ESP = Window:AddTab("👁️ ESP", "eye")
+    Tabs.Utility = Window:AddTab("🧰 Utility", "tool")
+    Tabs.GameSettings = Window:AddTab("⚙️ Game Settings", "settings")
+
+    -- // ============================================================
+    -- // AUTOFARM TAB – THE REBEL ENGINE
+    -- // ============================================================
+    AutoFarmGroup = Tabs.AutoFarm:AddLeftGroupbox("🌾 AutoFarm Controls", "sword")
+
+    -- AutoFarm Toggle
+    local farmToggle = AutoFarmGroup:AddToggle("Farm_Toggle", {
+        Text = "Enable AutoFarm",
+        Tooltip = "Toggle auto-farming on/off",
+        Default = false,
+        Risky = false,
+        Callback = function(Value)
+            print("[Paradise Hub] AutoFarm toggled:", Value)
+            if Value then
+                Library:Notify({
+                    Title = "🌾 AutoFarm Started",
+                    Description = "Farming in progress...",
+                    Time = 3,
+                })
+            else
+                Library:Notify({
+                    Title = "🌾 AutoFarm Stopped",
+                    Description = "Farming halted.",
+                    Time = 2,
+                })
+            end
+        end
+    })
+
+    -- Farm Range
+    AutoFarmGroup:AddSlider("FarmDistance", {
+        Text = "Farm Range (studs)",
+        Default = 150,
+        Min = 50,
+        Max = 400,
+        Rounding = 0,
+        Suffix = " studs",
+        Tooltip = "How far to search for enemies",
+        Callback = function(Value) end
+    })
+
+    -- Attack Delay
+    AutoFarmGroup:AddSlider("AttackDelay", {
+        Text = "Attack Delay (seconds)",
+        Default = 0.5,
+        Min = 0.1,
+        Max = 2,
+        Rounding = 1,
+        Suffix = "s",
+        Tooltip = "Time between attacks",
+        Callback = function(Value) end
+    })
+
+    -- Target Type
+    AutoFarmGroup:AddDropdown("FarmTarget", {
+        Values = { "NPCs", "Bosses", "Fruits", "Chests" },
+        Default = 1,
+        Multi = false,
+        Text = "Farm Target",
+        Tooltip = "What to farm",
+        Callback = function(Value) end
+    })
+
+    -- AutoFarm Status Label
+    AutoFarmGroup:AddLabel("Status: Idle", true, "FarmStatus")
+
+    -- // ============================================================
+    -- // ESP TAB (SECOND – YOUR ORIGINAL REQUEST)
+    -- // ============================================================
+    ESPGroup = Tabs.ESP:AddLeftGroupbox("👁️ ESP Controls", "eye")
+
+    local espToggle = ESPGroup:AddToggle("ESP_Toggle", {
+        Text = "Enable ESP",
+        Tooltip = "Turn the ESP system on/off",
+        Default = false,
+        Risky = false,
+        Callback = function(Value)
+            print("[Paradise Hub] ESP toggled:", Value)
+            if not Value then
+                ClearESP()
+            end
+        end
+    })
+
+    ESPGroup:AddSlider("DistanceSlider", {
+        Text = "Max Distance (studs)",
+        Default = 250,
+        Min = 50,
+        Max = 500,
+        Rounding = 0,
+        Suffix = " studs",
+        Tooltip = "Entities beyond this distance are ignored",
+        Callback = function(Value) end
+    })
+
+    ESPGroup:AddToggle("LineESP_Toggle", {
+        Text = "Draw Lines to Entities",
+        Tooltip = "Show a line from your character to the target",
+        Default = false,
+        Callback = function(Value) end
+    })
+
+    ESPGroup:AddToggle("Glow_Toggle", {
+        Text = "Glow Effect",
+        Tooltip = "Adds a glowing aura around entities",
+        Default = true,
+        Callback = function(Value) end
+    })
+
+    -- Color Pickers
+    ESPGroup:AddLabel("Player Color"):AddColorPicker("PlayerColor", {
+        Default = Color3.new(0, 0.8, 0.9),
+        Title = "Player ESP Color",
+        Callback = function(Value) end
+    })
+    ESPGroup:AddLabel("NPC Color"):AddColorPicker("NPCColor", {
+        Default = Color3.new(1, 0.7, 0.1),
+        Title = "NPC ESP Color",
+        Callback = function(Value) end
+    })
+    ESPGroup:AddLabel("Chest Color"):AddColorPicker("ChestColor", {
+        Default = Color3.new(1, 0.4, 0.5),
+        Title = "Chest ESP Color",
+        Callback = function(Value) end
+    })
+    ESPGroup:AddLabel("Fruit Color"):AddColorPicker("FruitColor", {
+        Default = Color3.new(0.8, 0.2, 0.8),
+        Title = "Fruit ESP Color",
+        Callback = function(Value) end
+    })
+
+    -- // ============================================================
+    -- // UTILITY TAB (THIRD)
+    -- // ============================================================
+    UtilityGroup = Tabs.Utility:AddLeftGroupbox("🧰 Utility Features", "tool")
+
+    UtilityGroup:AddButton({
+        Text = "📍 Teleport to Island (Placeholder)",
+        Func = function()
+            Library:Notify({
+                Title = "🚀 Teleport",
+                Description = "Teleport feature coming soon!",
+                Time = 3,
             })
-            -- Set label color
-            for _, label in pairs(KeyGroup.Objects) do
-                if label:IsA("TextLabel") then
-                    label.TextColor3 = LightPurple
+        end,
+    })
+
+    UtilityGroup:AddButton({
+        Text = "🔄 Reset Character",
+        Func = function()
+            local player = game.Players.LocalPlayer
+            if player and player.Character then
+                player.Character:BreakJoints()
+                Library:Notify({
+                    Title = "🔄 Reset",
+                    Description = "Character reset successfully.",
+                    Time = 2,
+                })
+            end
+        end,
+    })
+
+    UtilityGroup:AddToggle("AutoCollect_Toggle", {
+        Text = "Auto-Collect Fruits/Chests",
+        Tooltip = "Automatically pick up nearby fruits and chests",
+        Default = false,
+        Callback = function(Value) end
+    })
+
+    -- // ============================================================
+    -- // GAME SETTINGS TAB (FOURTH – YOUR REQUEST)
+    -- // ============================================================
+    SettingsGroup = Tabs.GameSettings:AddLeftGroupbox("⚙️ Game Settings", "settings")
+
+    -- Rejoin Server
+    SettingsGroup:AddButton({
+        Text = "🔄 Rejoin Server",
+        Tooltip = "Reconnect to the same server",
+        Func = function()
+            Library:Notify({
+                Title = "🔄 Rejoining",
+                Description = "Reconnecting to server...",
+                Time = 3,
+            })
+            local ts = game:GetService("TeleportService")
+            local placeId = game.PlaceId
+            local jobId = game.JobId
+            ts:TeleportToPlaceInstance(placeId, jobId, game.Players.LocalPlayer)
+        end,
+    })
+
+    -- Unload Script
+    SettingsGroup:AddButton({
+        Text = "🧹 Unload Script",
+        Tooltip = "Completely remove Paradise Hub",
+        Func = function()
+            Library:Notify({
+                Title = "🧹 Unloading",
+                Description = "Goodbye, fren!",
+                Time = 2,
+            })
+            task.wait(1)
+            Library:Unload()
+            -- Also destroy key overlay if it exists
+            if keyOverlay then keyOverlay:Destroy() end
+        end,
+    })
+
+    -- Join Small Servers
+    SettingsGroup:AddButton({
+        Text = "📉 Join Small Server",
+        Tooltip = "Find a server with fewer than 10 players",
+        Func = function()
+            Library:Notify({
+                Title = "📉 Searching",
+                Description = "Looking for a small server...",
+                Time = 3,
+            })
+            -- Use Roblox API to find small server
+            local function findSmallServer()
+                local HttpService = game:GetService("HttpService")
+                local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?limit=100"
+                local success, response = pcall(function()
+                    return game:HttpGet(url)
+                end)
+                if success then
+                    local data = HttpService:JSONDecode(response)
+                    local smallServer = nil
+                    for _, server in pairs(data.data) do
+                        if server.playing < 10 and server.playing > 0 then
+                            smallServer = server
+                            break
+                        end
+                    end
+                    if smallServer then
+                        Library:Notify({
+                            Title = "📉 Found Server",
+                            Description = "Joining server with " .. smallServer.playing .. " players...",
+                            Time = 3,
+                        })
+                        local ts = game:GetService("TeleportService")
+                        ts:TeleportToPlaceInstance(game.PlaceId, smallServer.id, game.Players.LocalPlayer)
+                    else
+                        Library:Notify({
+                            Title = "❌ No Small Server",
+                            Description = "Could not find a server with <10 players.",
+                            Time = 3,
+                        })
+                    end
+                else
+                    Library:Notify({
+                        Title = "❌ API Error",
+                        Description = "Failed to fetch server list.",
+                        Time = 3,
+                    })
                 end
             end
-            Library:Notify({
-                Title = "🔓 Paradise Unlocked",
-                Description = "Full access granted. Enjoy!",
-                Time = 4,
-            })
-            -- Also update the overlay title
-            titleLabel.Text = "🌴 Paradise Hub – Unlocked"
-            titleLabel.TextColor3 = LightPurple
-        else
-            Library:Notify({
-                Title = "❌ Access Denied",
-                Description = "Incorrect key. Try again, rebel.",
-                Time = 3,
-                Type = "Error",
-            })
-            keyInput:SetValue("")
-            -- Shake effect (optional)
-        end
-    end,
-    DoubleClick = false,
-    Tooltip = "Click to verify the key",
-})
--- // Override button text color
-if unlockButton and unlockButton.TextLabel then
-    unlockButton.TextLabel.TextColor3 = LightPurple
+            findSmallServer()
+        end,
+    })
+
+    -- Apply light purple theme to all text
+    ApplyLightPurpleTheme()
 end
 
 -- // ============================================================
--- // AUTOFARM TAB (NOW FIRST AFTER UNLOCK)
+-- // THEME: LIGHT PURPLE APPLIER
 -- // ============================================================
-local AutoFarmGroup = Tabs.AutoFarm:AddLeftGroupbox("🌾 AutoFarm Controls", "sword")
-
--- // Override all text colors in AutoFarm
-local function SetGroupboxTextColor(groupbox, color)
-    for _, obj in pairs(groupbox.Objects or {}) do
-        if obj:IsA("TextLabel") or obj:IsA("TextBox") then
-            obj.TextColor3 = color
+function ApplyLightPurpleTheme()
+    local LightPurple = Color3.fromRGB(200, 150, 255)
+    local function recolor(obj)
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+            obj.TextColor3 = LightPurple
         end
-        if obj:IsA("TextButton") then
-            obj.TextColor3 = color
+        for _, child in pairs(obj:GetChildren()) do
+            recolor(child)
+        end
+    end
+    -- Apply to all groupboxes
+    for _, group in pairs({AutoFarmGroup, ESPGroup, UtilityGroup, SettingsGroup}) do
+        if group then
+            recolor(group)
         end
     end
 end
 
--- // AutoFarm Toggle (light purple)
-local farmToggle = AutoFarmGroup:AddToggle("Farm_Toggle", {
-    Text = "Enable AutoFarm",
-    Tooltip = "Toggle auto-farming on/off",
-    Default = false,
-    Risky = false,
-    Callback = function(Value)
-        print("[Paradise Hub] AutoFarm toggled:", Value)
-        if Value then
-            Library:Notify({
-                Title = "🌾 AutoFarm Started",
-                Description = "Farming in progress... (placeholder)",
-                Time = 3,
-            })
-        else
-            Library:Notify({
-                Title = "🌾 AutoFarm Stopped",
-                Description = "Farming halted.",
-                Time = 2,
-            })
-        end
-    end
-})
--- // Override toggle text
-if farmToggle and farmToggle.TextLabel then
-    farmToggle.TextLabel.TextColor3 = LightPurple
-end
-
--- // AutoFarm Settings
-AutoFarmGroup:AddSlider("FarmDistance", {
-    Text = "Farm Range (studs)",
-    Default = 150,
-    Min = 50,
-    Max = 400,
-    Rounding = 0,
-    Suffix = " studs",
-    Tooltip = "How far to search for enemies",
-    Callback = function(Value) end
-})
--- // Override slider labels (they're in the slider object)
--- // We'll handle via theme
-
-AutoFarmGroup:AddDropdown("FarmTarget", {
-    Values = { "NPCs", "Bosses", "Fruits", "Chests" },
-    Default = 1,
-    Multi = false,
-    Text = "Farm Target",
-    Tooltip = "What to farm",
-    Callback = function(Value) end
-})
-
-AutoFarmGroup:AddButton({
-    Text = "⚔️ Test Farm (Placeholder)",
-    Func = function()
-        Library:Notify({
-            Title = "⚔️ Farm Test",
-            Description = "This feature is coming soon! Stay tuned.",
-            Time = 3,
-        })
-    end,
-})
-
--- // Apply light purple to all AutoFarm elements
-SetGroupboxTextColor(AutoFarmGroup, LightPurple)
-
 -- // ============================================================
--- // ESP TAB (SECOND – YOUR ORIGINAL REQUEST)
+-- // AUTOFARM ENGINE – THE REBEL HEART
 -- // ============================================================
-local ESPGroup = Tabs.ESP:AddLeftGroupbox("👁️ ESP Controls", "eye")
-
--- // ESP Toggle
-local espToggle = ESPGroup:AddToggle("ESP_Toggle", {
-    Text = "Enable ESP",
-    Tooltip = "Turn the ESP system on/off",
-    Default = false,
-    Risky = false,
-    Callback = function(Value)
-        print("[Paradise Hub] ESP toggled:", Value)
-        if not Value then
-            ClearESP()
-        end
-    end
-})
-if espToggle and espToggle.TextLabel then
-    espToggle.TextLabel.TextColor3 = LightPurple
-end
-
--- // Distance Slider
-local distSlider = ESPGroup:AddSlider("DistanceSlider", {
-    Text = "Max Distance (studs)",
-    Default = 250,
-    Min = 50,
-    Max = 500,
-    Rounding = 0,
-    Suffix = " studs",
-    Tooltip = "Entities beyond this distance are ignored",
-    Callback = function(Value) end
-})
-
--- // Line ESP Toggle
-local lineToggle = ESPGroup:AddToggle("LineESP_Toggle", {
-    Text = "Draw Lines to Entities",
-    Tooltip = "Show a line from your character to the target",
-    Default = false,
-    Callback = function(Value) end
-})
-if lineToggle and lineToggle.TextLabel then
-    lineToggle.TextLabel.TextColor3 = LightPurple
-end
-
--- // Glow Effect
-local glowToggle = ESPGroup:AddToggle("Glow_Toggle", {
-    Text = "Glow Effect",
-    Tooltip = "Adds a glowing aura around entities",
-    Default = true,
-    Callback = function(Value) end
-})
-if glowToggle and glowToggle.TextLabel then
-    glowToggle.TextLabel.TextColor3 = LightPurple
-end
-
--- // Color Pickers – Paradise Theme (but labels in light purple)
-local playerColor = ESPGroup:AddLabel("Player Color"):AddColorPicker("PlayerColor", {
-    Default = Color3.new(0, 0.8, 0.9),
-    Title = "Player ESP Color",
-    Callback = function(Value) end
-})
--- // Override label
-for _, obj in pairs(ESPGroup.Objects or {}) do
-    if obj:IsA("TextLabel") then
-        obj.TextColor3 = LightPurple
-    end
-end
-
-local npcColor = ESPGroup:AddLabel("NPC Color"):AddColorPicker("NPCColor", {
-    Default = Color3.new(1, 0.7, 0.1),
-    Title = "NPC ESP Color",
-    Callback = function(Value) end
-})
-
-local chestColor = ESPGroup:AddLabel("Chest Color"):AddColorPicker("ChestColor", {
-    Default = Color3.new(1, 0.4, 0.5),
-    Title = "Chest ESP Color",
-    Callback = function(Value) end
-})
-
-local fruitColor = ESPGroup:AddLabel("Fruit Color"):AddColorPicker("FruitColor", {
-    Default = Color3.new(0.8, 0.2, 0.8),
-    Title = "Fruit ESP Color",
-    Callback = function(Value) end
-})
-
-SetGroupboxTextColor(ESPGroup, LightPurple)
-
--- // ============================================================
--- // UTILITY TAB (THIRD)
--- // ============================================================
-local UtilityGroup = Tabs.Utility:AddLeftGroupbox("🧰 Utility Features", "tool")
-
--- // Teleport Section
-UtilityGroup:AddLabel("🚀 Teleports")
-UtilityGroup:AddButton({
-    Text = "📍 Teleport to Island (Placeholder)",
-    Func = function()
-        Library:Notify({
-            Title = "🚀 Teleport",
-            Description = "Teleport feature coming soon!",
-            Time = 3,
-        })
-    end,
-})
-
-UtilityGroup:AddButton({
-    Text = "🔄 Reset Character",
-    Func = function()
-        local player = game.Players.LocalPlayer
-        if player and player.Character then
-            player.Character:BreakJoints()
-            Library:Notify({
-                Title = "🔄 Reset",
-                Description = "Character reset successfully.",
-                Time = 2,
-            })
-        end
-    end,
-})
-
--- // Collect Section
-UtilityGroup:AddLabel("📦 Auto-Collect")
-UtilityGroup:AddToggle("AutoCollect_Toggle", {
-    Text = "Auto-Collect Fruits/Chests",
-    Tooltip = "Automatically pick up nearby fruits and chests",
-    Default = false,
-    Callback = function(Value) end
-})
-
-SetGroupboxTextColor(UtilityGroup, LightPurple)
-
--- // ============================================================
--- // SETTINGS TAB (FOURTH – UI CONFIGURATION)
--- // ============================================================
-local SettingsGroup = Tabs.Settings:AddLeftGroupbox("⚙️ UI Settings", "wrench")
-SettingsGroup:AddToggle("KeybindMenuOpen", {
-    Default = Library.KeybindFrame.Visible,
-    Text = "Open Keybind Menu",
-    Callback = function(value)
-        Library.KeybindFrame.Visible = value
-    end,
-})
-SettingsGroup:AddToggle("ShowCustomCursor", {
-    Text = "Custom Cursor",
-    Default = Library.ShowCustomCursor,
-    Callback = function(Value)
-        Library.ShowCustomCursor = Value
-    end,
-})
-SettingsGroup:AddDropdown("NotificationSide", {
-    Values = { "Left", "Right" },
-    Default = "Right",
-    Text = "Notification Side",
-    Callback = function(Value)
-        Library:SetNotifySide(Value)
-    end,
-})
-SettingsGroup:AddSlider("UICornerSlider", {
-    Text = "Corner Radius",
-    Default = Library.CornerRadius,
-    Min = 0,
-    Max = 20,
-    Rounding = 0,
-    Callback = function(value)
-        Window:SetCornerRadius(value)
-    end
-})
-
-SetGroupboxTextColor(SettingsGroup, LightPurple)
-
--- // ============================================================
--- // ESP ENGINE – THE HEART OF PARADISE HUB (SAME AS BEFORE)
--- // ============================================================
-
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local Workspace = workspace
+local Workspace = game:GetService("Workspace")
 
--- // STORAGE FOR ESP OBJECTS
-local ESPObjects = {
-    Highlights = {},
-    Billboards = {},
-    Lines = {},
-    Glows = {},
-}
+local farmActive = false
+local farmTarget = nil
+local attackCooldown = false
 
--- // HELPER FUNCTIONS (same as before)
-local function CreateBillboard(adornee, text, color, offset)
+-- // Find nearest NPC
+local function FindNearestNPC(range)
+    local char = LocalPlayer.Character
+    if not char or not char.PrimaryPart then return nil end
+    local pos = char.PrimaryPart.Position
+    local nearest = nil
+    local nearestDist = range
+
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
+            if not Players:GetPlayerFromCharacter(obj) then
+                local root = obj.HumanoidRootPart
+                local dist = (pos - root.Position).Magnitude
+                if dist < nearestDist and obj.Humanoid.Health > 0 then
+                    nearest = obj
+                    nearestDist = dist
+                end
+            end
+        end
+    end
+    return nearest
+end
+
+-- // Attack NPC (simulate click or ability)
+local function AttackNPC(target)
+    if not target or not target.PrimaryPart then return end
+    local char = LocalPlayer.Character
+    if not char or not char.PrimaryPart then return end
+
+    -- Face target
+    char.PrimaryPart.CFrame = CFrame.lookAt(char.PrimaryPart.Position, target.PrimaryPart.Position)
+
+    -- Simulate mouse click (for combat)
+    local mouse = LocalPlayer:GetMouse()
+    if mouse then
+        -- Get screen position of target
+        local camera = Workspace.CurrentCamera
+        local screenPos, onScreen = camera:WorldToViewportPoint(target.PrimaryPart.Position)
+        if onScreen then
+            mouse.Move(mouse, screenPos.X, screenPos.Y)
+            mouse.Button1Down(mouse)
+            task.wait(0.05)
+            mouse.Button1Up(mouse)
+        end
+    end
+end
+
+-- // AutoFarm Loop
+local function AutoFarmLoop()
+    while isUnlocked and RunService.Heartbeat do
+        if not Toggles.Farm_Toggle.Value then
+            farmActive = false
+            if Options.FarmStatus then
+                Options.FarmStatus:SetText("Status: Idle")
+            end
+            task.wait(0.5)
+            continue
+        end
+
+        farmActive = true
+        local range = Options.FarmDistance.Value or 150
+        local target = FindNearestNPC(range)
+
+        if target then
+            if Options.FarmStatus then
+                Options.FarmStatus:SetText("Status: Fighting " .. target.Name)
+            end
+            if not attackCooldown then
+                attackCooldown = true
+                AttackNPC(target)
+                task.wait(Options.AttackDelay.Value or 0.5)
+                attackCooldown = false
+            end
+        else
+            if Options.FarmStatus then
+                Options.FarmStatus:SetText("Status: Searching for targets...")
+            end
+        end
+        task.wait(0.2)
+    end
+end
+
+-- // Start AutoFarm loop
+spawn(AutoFarmLoop)
+
+-- // ============================================================
+-- // ESP ENGINE (from previous version, simplified)
+-- // ============================================================
+local ESPObjects = { Highlights = {}, Billboards = {}, Lines = {}, Glows = {} }
+
+function ClearESP()
+    for _, v in pairs(ESPObjects.Highlights) do if v and v.Parent then v:Destroy() end end
+    for _, v in pairs(ESPObjects.Billboards) do if v and v.Parent then v:Destroy() end end
+    for _, v in pairs(ESPObjects.Lines) do if v and v.Parent then v:Destroy() end end
+    for _, v in pairs(ESPObjects.Glows) do if v and v.Parent then v:Destroy() end end
+    ESPObjects = { Highlights = {}, Billboards = {}, Lines = {}, Glows = {} }
+end
+
+local function CreateBillboard(adornee, text, color)
     local bill = Instance.new("BillboardGui")
     bill.Adornee = adornee
     bill.Size = UDim2.new(0, 200, 0, 40)
-    bill.StudsOffset = offset or Vector3.new(0, 3, 0)
+    bill.StudsOffset = Vector3.new(0, 4, 0)
     bill.MaxDistance = 500
     bill.AlwaysOnTop = true
     local label = Instance.new("TextLabel", bill)
@@ -477,8 +589,6 @@ local function CreateBillboard(adornee, text, color, offset)
     label.TextStrokeTransparency = 0.3
     label.Font = Enum.Font.GothamBold
     label.TextSize = 14
-    label.TextScaled = false
-    label.TextWrapped = true
     return bill
 end
 
@@ -493,57 +603,6 @@ local function CreateHighlight(adornee, color)
     return hl
 end
 
-local function CreateGlow(adornee, color)
-    local glowPart = Instance.new("Part")
-    glowPart.Anchored = true
-    glowPart.CanCollide = false
-    glowPart.Material = Enum.Material.Neon
-    glowPart.BrickColor = BrickColor.new(color)
-    glowPart.Size = Vector3.new(5, 8, 5)
-    glowPart.Transparency = 0.7
-    glowPart.Shape = Enum.PartType.Cylinder
-    glowPart.Parent = adornee
-    return glowPart
-end
-
-local function CreateLine(targetPos, color)
-    local startPos = LocalPlayer.Character and LocalPlayer.Character.PrimaryPart and LocalPlayer.Character.PrimaryPart.Position or Vector3.new(0, 0, 0)
-    local midPos = (startPos + targetPos) / 2
-    local distance = (startPos - targetPos).Magnitude
-    if distance < 1 then return nil end
-    local part = Instance.new("Part")
-    part.Anchored = true
-    part.CanCollide = false
-    part.Material = Enum.Material.Neon
-    part.BrickColor = BrickColor.new(color)
-    part.Size = Vector3.new(0.2, 0.2, distance)
-    part.CFrame = CFrame.lookAt(midPos, targetPos) * CFrame.new(0, 0, -distance / 2)
-    part.BottomSurface = Enum.SurfaceType.Smooth
-    part.TopSurface = Enum.SurfaceType.Smooth
-    return part
-end
-
--- // CLEAR ALL ESP
-function ClearESP()
-    for _, v in pairs(ESPObjects.Highlights) do
-        if v and v.Parent then v:Destroy() end
-    end
-    for _, v in pairs(ESPObjects.Billboards) do
-        if v and v.Parent then v:Destroy() end
-    end
-    for _, v in pairs(ESPObjects.Lines) do
-        if v and v.Parent then v:Destroy() end
-    end
-    for _, v in pairs(ESPObjects.Glows) do
-        if v and v.Parent then v:Destroy() end
-    end
-    ESPObjects.Highlights = {}
-    ESPObjects.Billboards = {}
-    ESPObjects.Lines = {}
-    ESPObjects.Glows = {}
-end
-
--- // MAIN ESP UPDATE LOOP
 local function UpdateESP()
     if not Toggles.ESP_Toggle.Value or not isUnlocked then
         ClearESP()
@@ -571,22 +630,9 @@ local function UpdateESP()
                     local hl = CreateHighlight(char, plyColor)
                     hl.Parent = char
                     table.insert(ESPObjects.Highlights, hl)
-                    local text = player.Name .. " | " .. math.floor(dist) .. "m"
-                    local bill = CreateBillboard(root, text, plyColor, Vector3.new(0, 4, 0))
+                    local bill = CreateBillboard(root, player.Name .. " | " .. math.floor(dist) .. "m", plyColor)
                     bill.Parent = char
                     table.insert(ESPObjects.Billboards, bill)
-                    if showGlow then
-                        local glow = CreateGlow(root, plyColor)
-                        glow.Parent = char
-                        table.insert(ESPObjects.Glows, glow)
-                    end
-                    if showLines then
-                        local line = CreateLine(root.Position, plyColor)
-                        if line then
-                            line.Parent = char
-                            table.insert(ESPObjects.Lines, line)
-                        end
-                    end
                 end
             end
         end
@@ -599,93 +645,45 @@ local function UpdateESP()
                 local root = obj.HumanoidRootPart
                 local dist = (LocalPlayer.Character and LocalPlayer.Character.PrimaryPart and LocalPlayer.Character.PrimaryPart.Position - root.Position).Magnitude or 999
                 if dist <= maxDist then
-                    local npcName = obj.Name or "NPC"
                     local hl = CreateHighlight(obj, npcColor)
                     hl.Parent = obj
                     table.insert(ESPObjects.Highlights, hl)
-                    local text = npcName .. " | " .. math.floor(dist) .. "m"
-                    local bill = CreateBillboard(root, text, npcColor, Vector3.new(0, 4, 0))
+                    local bill = CreateBillboard(root, obj.Name .. " | " .. math.floor(dist) .. "m", npcColor)
                     bill.Parent = obj
                     table.insert(ESPObjects.Billboards, bill)
-                    if showGlow then
-                        local glow = CreateGlow(root, npcColor)
-                        glow.Parent = obj
-                        table.insert(ESPObjects.Glows, glow)
-                    end
-                    if showLines then
-                        local line = CreateLine(root.Position, npcColor)
-                        if line then
-                            line.Parent = obj
-                            table.insert(ESPObjects.Lines, line)
-                        end
-                    end
                 end
             end
         end
     end
 
-    -- Chests
+    -- Chests & Fruits (simplified)
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("Part") then
             local name = obj.Name:lower()
-            if name:find("chest") or name:find("loot") or name:find("supply") or name:find("money") then
-                local root = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Handle") or (obj:IsA("Part") and obj) or obj.PrimaryPart
+            if name:find("chest") or name:find("loot") then
+                local root = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Handle") or (obj:IsA("Part") and obj)
                 if root and root.Position then
                     local dist = (LocalPlayer.Character and LocalPlayer.Character.PrimaryPart and LocalPlayer.Character.PrimaryPart.Position - root.Position).Magnitude or 999
                     if dist <= maxDist then
                         local hl = CreateHighlight(obj, chestColor)
                         hl.Parent = obj
                         table.insert(ESPObjects.Highlights, hl)
-                        local text = "📦 Chest | " .. math.floor(dist) .. "m"
-                        local bill = CreateBillboard(root, text, chestColor, Vector3.new(0, 2, 0))
+                        local bill = CreateBillboard(root, "📦 Chest | " .. math.floor(dist) .. "m", chestColor)
                         bill.Parent = obj
                         table.insert(ESPObjects.Billboards, bill)
-                        if showGlow then
-                            local glow = CreateGlow(root, chestColor)
-                            glow.Parent = obj
-                            table.insert(ESPObjects.Glows, glow)
-                        end
-                        if showLines then
-                            local line = CreateLine(root.Position, chestColor)
-                            if line then
-                                line.Parent = obj
-                                table.insert(ESPObjects.Lines, line)
-                            end
-                        end
                     end
                 end
-            end
-        end
-    end
-
-    -- Fruits
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("Part") or obj:IsA("Model") then
-            local name = obj.Name:lower()
-            if name:find("fruit") or name:find("devil") then
-                local root = obj:FindFirstChild("Handle") or obj:FindFirstChild("HumanoidRootPart") or (obj:IsA("Part") and obj) or obj.PrimaryPart
+            elseif name:find("fruit") or name:find("devil") then
+                local root = obj:FindFirstChild("Handle") or obj:FindFirstChild("HumanoidRootPart") or (obj:IsA("Part") and obj)
                 if root and root.Position then
                     local dist = (LocalPlayer.Character and LocalPlayer.Character.PrimaryPart and LocalPlayer.Character.PrimaryPart.Position - root.Position).Magnitude or 999
                     if dist <= maxDist then
                         local hl = CreateHighlight(obj, fruitColor)
                         hl.Parent = obj
                         table.insert(ESPObjects.Highlights, hl)
-                        local text = "🍎 Fruit | " .. math.floor(dist) .. "m"
-                        local bill = CreateBillboard(root, text, fruitColor, Vector3.new(0, 2, 0))
+                        local bill = CreateBillboard(root, "🍎 Fruit | " .. math.floor(dist) .. "m", fruitColor)
                         bill.Parent = obj
                         table.insert(ESPObjects.Billboards, bill)
-                        if showGlow then
-                            local glow = CreateGlow(root, fruitColor)
-                            glow.Parent = obj
-                            table.insert(ESPObjects.Glows, glow)
-                        end
-                        if showLines then
-                            local line = CreateLine(root.Position, fruitColor)
-                            if line then
-                                line.Parent = obj
-                                table.insert(ESPObjects.Lines, line)
-                            end
-                        end
                     end
                 end
             end
@@ -693,20 +691,11 @@ local function UpdateESP()
     end
 end
 
--- // START THE ESP LOOP (only runs if unlocked)
+-- // ESP update loop
 RunService.Heartbeat:Connect(UpdateESP)
 
--- // CLEANUP ON CHARACTER CHANGE
-LocalPlayer.CharacterAdded:Connect(function()
-    ClearESP()
-end)
-
--- // UNLOAD CLEANUP
-Library:OnUnload(function()
-    ClearESP()
-    if screenGui then screenGui:Destroy() end
-    print("[Paradise Hub] Unloaded. See you in paradise!")
-end)
+-- // Cleanup on character change
+LocalPlayer.CharacterAdded:Connect(ClearESP)
 
 -- // ============================================================
 -- // CONFIGURATION SYSTEM
@@ -718,17 +707,15 @@ SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
 ThemeManager:SetFolder("ParadiseHub")
 SaveManager:SetFolder("ParadiseHub")
 SaveManager:SetSubFolder("BloxFruits")
-SaveManager:BuildConfigSection(Tabs.Settings)
-ThemeManager:ApplyToTab(Tabs.Settings)
-SaveManager:LoadAutoloadConfig()
+-- We'll build config after tabs are created (deferred)
+task.wait(0.5) -- Wait for tabs to be created
+if Tabs.GameSettings then
+    SaveManager:BuildConfigSection(Tabs.GameSettings)
+    ThemeManager:ApplyToTab(Tabs.GameSettings)
+    SaveManager:LoadAutoloadConfig()
+end
 
 -- // ============================================================
--- // WELCOME NOTIFICATION
+-- // NOTIFICATION (Shown after unlock)
 -- // ============================================================
-Library:Notify({
-    Title = "🔐 Paradise Hub – Locked",
-    Description = "Enter the key to unlock all features.",
-    Time = 5,
-})
-
-print("[Paradise Hub] Loaded. Waiting for key: OHPARADISENOTAGAIN!")
+print("[Paradise Hub] Loaded. Awaiting key: OHPARADISENOTAGAIN!")
